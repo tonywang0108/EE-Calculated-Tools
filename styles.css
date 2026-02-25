@@ -179,6 +179,12 @@ input[type="number"]:focus {
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
 }
 
+input[type="checkbox"] {
+  width: auto;
+  margin-right: 0.5rem;
+  accent-color: var(--accent);
+}
+
 .unit {
   font-size: 0.8rem;
   color: var(--text-muted);

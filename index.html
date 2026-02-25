@@ -93,15 +93,15 @@
         </div>
       </section>
 
-      <!-- Buck 輸出電壓 (R1, R2) -->
-      <section class="card" id="buck-vout">
-        <h2>Buck 輸出電壓 <span class="card-title-en">Buck output voltage</span></h2>
-        <p class="card-desc">依反饋電阻 R1、R2 與 Vref 計算：Vout = Vref×(1+R1/R2) <span class="card-desc-en">Vout from feedback R1, R2 and Vref</span></p>
+      <!-- Buck/Boost 輸出電壓（合併，含反算 R2） -->
+      <section class="card" id="buck-boost-vout">
+        <h2>Buck/Boost 輸出電壓 <span class="card-title-en">Buck/Boost output voltage</span></h2>
+        <p class="card-desc">Vout = Vref×(1+R1/R2)；可反算：輸入 Vout、Vref、R1 得 R2 <span class="card-desc-en">Forward: Vout from R1,R2. Reverse: R2 from Vout,Vref,R1</span></p>
         <div class="form-row">
           <label>
             <span class="label-zh">參考電壓 Vref</span>
             <span class="label-en">Reference voltage Vref</span>
-            <input type="number" id="buck-vref" value="0.8" step="0.01" min="0" placeholder="V">
+            <input type="number" id="bb-vref" value="0.8" step="0.01" min="0" placeholder="V">
             <span class="unit">V</span>
           </label>
         </div>
@@ -109,53 +109,33 @@
           <label>
             <span class="label-zh">R1（Vout → FB）</span>
             <span class="label-en">R1 (Vout to FB)</span>
-            <input type="number" id="buck-r1" value="10000" step="any" min="0" placeholder="Ω">
+            <input type="number" id="bb-r1" value="10000" step="any" min="0" placeholder="Ω">
             <span class="unit">Ω</span>
           </label>
           <label>
             <span class="label-zh">R2（FB → GND）</span>
             <span class="label-en">R2 (FB to GND)</span>
-            <input type="number" id="buck-r2" value="10000" step="any" min="0" placeholder="Ω">
+            <input type="number" id="bb-r2" value="10000" step="any" min="0" placeholder="Ω（求 Vout 時填）">
             <span class="unit">Ω</span>
           </label>
         </div>
-        <div class="result-box">
-          <div class="result-label">Vout <span class="result-label-en">Output voltage</span></div>
-          <div class="result-value" id="buck-vout-result">—</div>
-          <div class="result-unit">V</div>
-        </div>
-      </section>
-
-      <!-- Boost 輸出電壓 (R1, R2) -->
-      <section class="card" id="boost-vout">
-        <h2>Boost 輸出電壓 <span class="card-title-en">Boost output voltage</span></h2>
-        <p class="card-desc">依反饋電阻 R1、R2 與 Vref 計算：Vout = Vref×(1+R1/R2) <span class="card-desc-en">Vout from feedback R1, R2 and Vref</span></p>
         <div class="form-row">
           <label>
-            <span class="label-zh">參考電壓 Vref</span>
-            <span class="label-en">Reference voltage Vref</span>
-            <input type="number" id="boost-vref" value="0.8" step="0.01" min="0" placeholder="V">
+            <span class="label-zh">目標 Vout（求 R2 時填）</span>
+            <span class="label-en">Target Vout (fill to solve for R2)</span>
+            <input type="number" id="bb-vout-in" value="" step="any" min="0" placeholder="V">
             <span class="unit">V</span>
           </label>
         </div>
-        <div class="form-row two-cols">
-          <label>
-            <span class="label-zh">R1（Vout → FB）</span>
-            <span class="label-en">R1 (Vout to FB)</span>
-            <input type="number" id="boost-r1" value="10000" step="any" min="0" placeholder="Ω">
-            <span class="unit">Ω</span>
-          </label>
-          <label>
-            <span class="label-zh">R2（FB → GND）</span>
-            <span class="label-en">R2 (FB to GND)</span>
-            <input type="number" id="boost-r2" value="10000" step="any" min="0" placeholder="Ω">
-            <span class="unit">Ω</span>
-          </label>
-        </div>
         <div class="result-box">
-          <div class="result-label">Vout <span class="result-label-en">Output voltage</span></div>
-          <div class="result-value" id="boost-vout-result">—</div>
+          <div class="result-label">Vout（由 R1、R2 算） <span class="result-label-en">Vout (from R1, R2)</span></div>
+          <div class="result-value" id="bb-vout-result">—</div>
           <div class="result-unit">V</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">R2（由 Vout、Vref、R1 算） <span class="result-label-en">R2 (from Vout, Vref, R1)</span></div>
+          <div class="result-value" id="bb-r2-result">—</div>
+          <div class="result-unit">Ω</div>
         </div>
       </section>
 
@@ -211,6 +191,130 @@
           <div class="result-label">NTC 電阻 <span class="result-label-en">NTC resistance</span></div>
           <div class="result-value" id="th-r-ntc">—</div>
           <div class="result-unit">Ω</div>
+        </div>
+      </section>
+
+      <!-- 線纜壓降與電阻 -->
+      <section class="card" id="cable-drop">
+        <h2>線纜壓降與電阻 <span class="card-title-en">Cable voltage drop & resistance</span></h2>
+        <p class="card-desc">依長度、截面積、電流與電阻率計算 <span class="card-desc-en">R = ρ·L/A, V_drop = I·R</span></p>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">長度</span>
+            <span class="label-en">Length</span>
+            <input type="number" id="cable-len" value="10" step="any" min="0" placeholder="m">
+            <span class="unit">m</span>
+          </label>
+          <label>
+            <span class="label-zh">截面積</span>
+            <span class="label-en">Cross-section</span>
+            <input type="number" id="cable-csa" value="1.5" step="0.1" min="0" placeholder="mm²">
+            <span class="unit">mm²</span>
+          </label>
+        </div>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">電流</span>
+            <span class="label-en">Current</span>
+            <input type="number" id="cable-i" value="5" step="any" min="0" placeholder="A">
+            <span class="unit">A</span>
+          </label>
+          <label>
+            <span class="label-zh">電阻率 ρ（銅 ≈ 1.68e-8）</span>
+            <span class="label-en">Resistivity ρ (copper ≈ 1.68e-8)</span>
+            <input type="number" id="cable-rho" value="0.0000000168" step="1e-10" min="0" placeholder="Ω·m">
+            <span class="unit">Ω·m</span>
+          </label>
+        </div>
+        <div class="form-row optional">
+          <label>
+            <span class="label-zh">來回兩線（×2）</span>
+            <span class="label-en">Round-trip (×2)</span>
+            <input type="checkbox" id="cable-roundtrip" checked>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">電阻 <span class="result-label-en">Resistance</span></div>
+          <div class="result-value" id="cable-r">—</div>
+          <div class="result-unit">Ω</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">壓降 <span class="result-label-en">Voltage drop</span></div>
+          <div class="result-value" id="cable-vdrop">—</div>
+          <div class="result-unit">V</div>
+        </div>
+      </section>
+
+      <!-- AWG 與電流評估 -->
+      <section class="card" id="awg-current">
+        <h2>AWG 與電流評估 <span class="card-title-en">AWG with current</span></h2>
+        <p class="card-desc">依 AWG 得線徑與截面積，並算給定電流下的壓降 <span class="card-desc-en">Diameter, area, R/m, V_drop at current</span></p>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">AWG</span>
+            <span class="label-en">AWG</span>
+            <input type="number" id="awg-n" value="18" step="1" min="0" max="40" placeholder="0–40">
+          </label>
+          <label>
+            <span class="label-zh">電流</span>
+            <span class="label-en">Current</span>
+            <input type="number" id="awg-i" value="2" step="any" min="0" placeholder="A">
+            <span class="unit">A</span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            <span class="label-zh">長度（可選，用於總壓降）</span>
+            <span class="label-en">Length (optional, for total V_drop)</span>
+            <input type="number" id="awg-len" value="5" step="any" min="0" placeholder="m">
+            <span class="unit">m</span>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">直徑 / 截面積 <span class="result-label-en">Diameter / Area</span></div>
+          <div class="result-value" id="awg-dia">—</div>
+          <div class="result-unit">mm / mm²</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">電阻/米（銅） <span class="result-label-en">Resistance/m (copper)</span></div>
+          <div class="result-value" id="awg-rpm">—</div>
+          <div class="result-unit">Ω/m</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">壓降（來回） <span class="result-label-en">V_drop (round-trip)</span></div>
+          <div class="result-value" id="awg-vdrop">—</div>
+          <div class="result-unit">V</div>
+        </div>
+      </section>
+
+      <!-- ADC 讀數 → 實際電壓 -->
+      <section class="card" id="adc-voltage">
+        <h2>ADC 讀數 → 實際電壓 <span class="card-title-en">ADC to real voltage</span></h2>
+        <p class="card-desc">由 ADC 位數、讀數與參考電壓換算實際電壓 <span class="card-desc-en">V = Vref × (counts / maxCount)</span></p>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">ADC 位數</span>
+            <span class="label-en">ADC bits</span>
+            <input type="number" id="adc-v-bits" value="12" step="1" min="8" max="16" placeholder="10 or 12">
+          </label>
+          <label>
+            <span class="label-zh">ADC 讀數（counts）</span>
+            <span class="label-en">ADC reading (counts)</span>
+            <input type="number" id="adc-v-value" value="2048" step="1" min="0" placeholder="0">
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            <span class="label-zh">參考電壓 Vref（滿刻度）</span>
+            <span class="label-en">Reference voltage Vref (full-scale)</span>
+            <input type="number" id="adc-v-ref" value="3.3" step="0.1" min="0" placeholder="V">
+            <span class="unit">V</span>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">實際電壓 <span class="result-label-en">Real voltage</span></div>
+          <div class="result-value" id="adc-v-result">—</div>
+          <div class="result-unit">V</div>
         </div>
       </section>
 

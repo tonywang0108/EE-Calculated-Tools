@@ -42,45 +42,32 @@
   });
   updateVoltageDivider();
 
-  // ——— Buck 輸出電壓 Vout = Vref × (1 + R1/R2) ———
-  function updateBuckVout() {
-    const vref = num(byId('buck-vref').value);
-    const r1 = num(byId('buck-r1').value);
-    const r2 = num(byId('buck-r2').value);
+  // ——— Buck/Boost 合併：Vout = Vref×(1+R1/R2)；反算 R2 = R1×Vref/(Vout−Vref) ———
+  function updateBuckBoost() {
+    const vref = num(byId('bb-vref').value);
+    const r1 = num(byId('bb-r1').value);
+    const r2 = num(byId('bb-r2').value);
+    const voutTarget = num(byId('bb-vout-in').value);
 
-    if (vref == null || vref < 0 || r1 == null || r2 == null || r2 <= 0) {
-      byId('buck-vout-result').textContent = '—';
-      return;
+    let voutResult = null;
+    let r2Result = null;
+
+    if (vref != null && vref >= 0 && r1 != null && r1 >= 0 && r2 != null && r2 > 0) {
+      voutResult = vref * (1 + r1 / r2);
     }
 
-    const vout = vref * (1 + r1 / r2);
-    byId('buck-vout-result').textContent = formatNum(vout, 3);
-  }
-
-  ['buck-vref', 'buck-r1', 'buck-r2'].forEach(function (id) {
-    byId(id).addEventListener('input', updateBuckVout);
-  });
-  updateBuckVout();
-
-  // ——— Boost 輸出電壓 Vout = Vref × (1 + R1/R2) ———
-  function updateBoostVout() {
-    const vref = num(byId('boost-vref').value);
-    const r1 = num(byId('boost-r1').value);
-    const r2 = num(byId('boost-r2').value);
-
-    if (vref == null || vref < 0 || r1 == null || r2 == null || r2 <= 0) {
-      byId('boost-vout-result').textContent = '—';
-      return;
+    if (voutTarget != null && voutTarget > vref && vref != null && vref > 0 && r1 != null && r1 >= 0) {
+      r2Result = (r1 * vref) / (voutTarget - vref);
     }
 
-    const vout = vref * (1 + r1 / r2);
-    byId('boost-vout-result').textContent = formatNum(vout, 3);
+    byId('bb-vout-result').textContent = voutResult != null ? formatNum(voutResult, 3) : '—';
+    byId('bb-r2-result').textContent = r2Result != null ? formatNum(r2Result, 2) : '—';
   }
 
-  ['boost-vref', 'boost-r1', 'boost-r2'].forEach(function (id) {
-    byId(id).addEventListener('input', updateBoostVout);
+  ['bb-vref', 'bb-r1', 'bb-r2', 'bb-vout-in'].forEach(function (id) {
+    byId(id).addEventListener('input', updateBuckBoost);
   });
-  updateBoostVout();
+  updateBuckBoost();
 
   // ——— 熱敏電阻 ADC → 溫度（分壓 + Beta 方程） ———
   function updateThermistorTemp() {
@@ -126,6 +113,93 @@
     byId(id).addEventListener('input', updateThermistorTemp);
   });
   updateThermistorTemp();
+
+  // ——— 線纜壓降與電阻 R = ρ·L/A，V_drop = I·R（可選來回×2） ———
+  function updateCableDrop() {
+    const len = num(byId('cable-len').value);
+    const csa = num(byId('cable-csa').value);
+    const cur = num(byId('cable-i').value);
+    const rho = num(byId('cable-rho').value);
+    const roundTrip = byId('cable-roundtrip').checked;
+
+    if (len == null || len < 0 || csa == null || csa <= 0 || cur == null || cur < 0 || rho == null || rho < 0) {
+      byId('cable-r').textContent = '—';
+      byId('cable-vdrop').textContent = '—';
+      return;
+    }
+
+    const A_m2 = csa * 1e-6;
+    let R = (rho * len) / A_m2;
+    if (roundTrip) R *= 2;
+    const vDrop = cur * R;
+
+    byId('cable-r').textContent = formatNum(R, 4);
+    byId('cable-vdrop').textContent = formatNum(vDrop, 4);
+  }
+
+  ['cable-len', 'cable-csa', 'cable-i', 'cable-rho'].forEach(function (id) {
+    byId(id).addEventListener('input', updateCableDrop);
+  });
+  byId('cable-roundtrip').addEventListener('change', updateCableDrop);
+  updateCableDrop();
+
+  // ——— AWG 與電流：直徑 d = 0.127×92^((36-n)/39) mm，A = π·d²/4 ———
+  function awgToArea(awg) {
+    const dMm = 0.127 * Math.pow(92, (36 - awg) / 39);
+    const aMm2 = (Math.PI / 4) * dMm * dMm;
+    return { d: dMm, a: aMm2 };
+  }
+
+  function updateAwgCurrent() {
+    const awg = num(byId('awg-n').value);
+    const cur = num(byId('awg-i').value);
+    const len = num(byId('awg-len').value) || 0;
+    const rhoCu = 1.68e-8;
+
+    if (awg == null || awg < 0 || cur == null || cur < 0) {
+      byId('awg-dia').textContent = '—';
+      byId('awg-rpm').textContent = '—';
+      byId('awg-vdrop').textContent = '—';
+      return;
+    }
+
+    const { d, a } = awgToArea(awg);
+    const aM2 = a * 1e-6;
+    const RperM = rhoCu / aM2;
+    const Rtotal = 2 * RperM * Math.max(0, len);
+    const vDrop = cur * Rtotal;
+
+    byId('awg-dia').textContent = formatNum(d, 3) + ' / ' + formatNum(a, 3);
+    byId('awg-rpm').textContent = formatNum(RperM * 2, 5);
+    byId('awg-vdrop').textContent = formatNum(vDrop, 4);
+  }
+
+  ['awg-n', 'awg-i', 'awg-len'].forEach(function (id) {
+    byId(id).addEventListener('input', updateAwgCurrent);
+  });
+  updateAwgCurrent();
+
+  // ——— ADC 讀數 → 實際電壓 V = Vref × (counts / (2^bits - 1)) ———
+  function updateAdcVoltage() {
+    const bits = num(byId('adc-v-bits').value);
+    const counts = num(byId('adc-v-value').value);
+    const vref = num(byId('adc-v-ref').value);
+
+    if (bits == null || counts == null || counts < 0 || vref == null || vref < 0) {
+      byId('adc-v-result').textContent = '—';
+      return;
+    }
+
+    const maxCount = Math.pow(2, Math.min(16, Math.max(8, Math.round(bits)))) - 1;
+    const v = vref * (counts / maxCount);
+
+    byId('adc-v-result').textContent = formatNum(v, 4);
+  }
+
+  ['adc-v-bits', 'adc-v-value', 'adc-v-ref'].forEach(function (id) {
+    byId(id).addEventListener('input', updateAdcVoltage);
+  });
+  updateAdcVoltage();
 
   // ——— 電池續航 ———
   function updateBatteryLife() {
