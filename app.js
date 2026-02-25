@@ -42,6 +42,91 @@
   });
   updateVoltageDivider();
 
+  // ——— Buck 輸出電壓 Vout = Vref × (1 + R1/R2) ———
+  function updateBuckVout() {
+    const vref = num(byId('buck-vref').value);
+    const r1 = num(byId('buck-r1').value);
+    const r2 = num(byId('buck-r2').value);
+
+    if (vref == null || vref < 0 || r1 == null || r2 == null || r2 <= 0) {
+      byId('buck-vout-result').textContent = '—';
+      return;
+    }
+
+    const vout = vref * (1 + r1 / r2);
+    byId('buck-vout-result').textContent = formatNum(vout, 3);
+  }
+
+  ['buck-vref', 'buck-r1', 'buck-r2'].forEach(function (id) {
+    byId(id).addEventListener('input', updateBuckVout);
+  });
+  updateBuckVout();
+
+  // ——— Boost 輸出電壓 Vout = Vref × (1 + R1/R2) ———
+  function updateBoostVout() {
+    const vref = num(byId('boost-vref').value);
+    const r1 = num(byId('boost-r1').value);
+    const r2 = num(byId('boost-r2').value);
+
+    if (vref == null || vref < 0 || r1 == null || r2 == null || r2 <= 0) {
+      byId('boost-vout-result').textContent = '—';
+      return;
+    }
+
+    const vout = vref * (1 + r1 / r2);
+    byId('boost-vout-result').textContent = formatNum(vout, 3);
+  }
+
+  ['boost-vref', 'boost-r1', 'boost-r2'].forEach(function (id) {
+    byId(id).addEventListener('input', updateBoostVout);
+  });
+  updateBoostVout();
+
+  // ——— 熱敏電阻 ADC → 溫度（分壓 + Beta 方程） ———
+  function updateThermistorTemp() {
+    const vcc = num(byId('th-vcc').value);
+    const rSeries = num(byId('th-r-series').value);
+    const adcBits = num(byId('th-adc-bits').value);
+    const adcValue = num(byId('th-adc-value').value);
+    const r0 = num(byId('th-r0').value);
+    const beta = num(byId('th-beta').value);
+
+    if (vcc == null || vcc <= 0 || rSeries == null || rSeries <= 0 ||
+        adcBits == null || adcValue == null || adcValue < 0 || r0 == null || r0 <= 0 || beta == null || beta <= 0) {
+      byId('th-temp').textContent = '—';
+      byId('th-r-ntc').textContent = '—';
+      return;
+    }
+
+    const maxCount = Math.pow(2, Math.min(16, Math.max(8, Math.round(adcBits)))) - 1;
+    if (adcValue >= maxCount) {
+      byId('th-temp').textContent = '—';
+      byId('th-r-ntc').textContent = '∞';
+      return;
+    }
+    if (adcValue <= 0) {
+      byId('th-temp').textContent = '—';
+      byId('th-r-ntc').textContent = '0';
+      return;
+    }
+
+    // V_adc = Vcc * (adc / maxCount), R_ntc = R_series * V_adc / (Vcc - V_adc) = R_series * adc / (maxCount - adc)
+    const rNtc = rSeries * adcValue / (maxCount - adcValue);
+
+    // Beta: 1/T = 1/T0 + (1/beta)*ln(R/R0), T0 = 298.15 K (25°C)
+    const T0 = 298.15;
+    const invT = 1 / T0 + (1 / beta) * Math.log(rNtc / r0);
+    const tempC = invT > 0 ? (1 / invT) - 273.15 : null;
+
+    byId('th-r-ntc').textContent = formatNum(rNtc, 0);
+    byId('th-temp').textContent = tempC != null && isFinite(tempC) ? formatNum(tempC, 1) : '—';
+  }
+
+  ['th-vcc', 'th-r-series', 'th-adc-bits', 'th-adc-value', 'th-r0', 'th-beta'].forEach(function (id) {
+    byId(id).addEventListener('input', updateThermistorTemp);
+  });
+  updateThermistorTemp();
+
   // ——— 電池續航 ———
   function updateBatteryLife() {
     const capacity = num(byId('capacity').value);

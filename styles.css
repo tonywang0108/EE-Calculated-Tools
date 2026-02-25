@@ -29,7 +29,7 @@ body {
 }
 
 .page {
-  max-width: 520px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
 }
@@ -54,11 +54,24 @@ body {
   font-size: 0.95rem;
 }
 
-/* Cards */
+/* Cards — 一排 3 個，小螢幕 1～2 欄 */
 .calculators {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 600px) {
+  .calculators {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .calculators {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
 }
 
 .card {
@@ -77,14 +90,30 @@ body {
 .card h2 {
   font-size: 1.1rem;
   font-weight: 600;
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.15rem;
   color: var(--text);
 }
 
-.card-desc {
-  margin: 0 0 1rem;
-  font-size: 0.85rem;
+.card-title-en {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 400;
   color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.card-desc {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.card-desc-en {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0.9;
+  margin-bottom: 0.75rem;
 }
 
 /* Form */
@@ -106,10 +135,18 @@ label {
   display: block;
 }
 
-label span:first-child {
+label .label-zh {
   display: block;
   font-size: 0.8rem;
   color: var(--text-muted);
+  margin-bottom: 0.1rem;
+}
+
+label .label-en {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  opacity: 0.85;
   margin-bottom: 0.25rem;
 }
 
@@ -173,6 +210,12 @@ input[type="number"]:focus {
   margin-bottom: 0.15rem;
 }
 
+.result-label-en {
+  display: block;
+  font-size: 0.65rem;
+  opacity: 0.8;
+}
+
 .result-box:not(.secondary) .result-label {
   width: auto;
   margin-bottom: 0;
@@ -209,6 +252,11 @@ input[type="number"]:focus {
   margin: 0;
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.footer .card-desc-en {
+  margin-bottom: 0;
+  margin-top: 0.25rem;
 }
 
 @media (min-width: 480px) {
