@@ -185,6 +185,23 @@ input[type="checkbox"] {
   accent-color: var(--accent);
 }
 
+select {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .unit {
   font-size: 0.8rem;
   color: var(--text-muted);

@@ -1,6 +1,8 @@
 # 電子計算器 · Electronics Calculator
 
-簡單的網頁版電子計算器：分壓、Buck/Boost、熱敏電阻、電池續航、歐姆定律。純前端，可放上 GitHub Pages 或 Netlify 隨處開啟。
+簡單的網頁版電子計算器：分壓、Buck/Boost、熱敏電阻、電池續航、歐姆定律、單位換算、誤差與 dB 計算。純前端，可放上 GitHub Pages 或 Netlify 隨處開啟。
+
+**Made by tony.wang@samsara.com**
 
 ## 功能
 
@@ -10,5 +12,9 @@
 - **Boost 輸出電壓**：同上，依反饋電阻計算輸出電壓
 - **熱敏電阻 ADC → 溫度**：分壓電路 + Beta 方程，由 ADC 讀數推算溫度
 - **歐姆定律／功率**：輸入 V、I 或 R 其中幾項，計算功率 P 與電阻 R
+- **mm / mil / inch 換算**：輸入任一單位數值，換算成另外兩種（含反算）
+- **誤差範圍計算**：輸入標稱值與誤差（± %），得到最大值與最小值
+- **dBm / dBmV 換算**：功率 dBm ↔ 電壓 dBmV（可選 50Ω / 75Ω）；含 mW、mV 反算
+- **dBm + 頻寬 → 功率密度**：輸入 dBm 與 BW (MHz)，得到 dBm/MHz、dBm/KHz
 
 版面為一排 3 個計算器（響應式），標示為中英雙語。

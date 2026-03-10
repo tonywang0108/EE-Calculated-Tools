@@ -258,4 +258,139 @@
     byId(id).addEventListener('input', updateOhmsPower);
   });
   updateOhmsPower();
+
+  // ——— mm / mil / inch 換算（1 inch = 25.4 mm, 1 inch = 1000 mil） ———
+  const MM_PER_INCH = 25.4;
+  const MIL_PER_INCH = 1000;
+
+  function updateLengthConvert() {
+    const val = num(byId('length-val').value);
+    const unit = byId('length-unit').value;
+
+    if (val == null) {
+      byId('length-mm').textContent = '—';
+      byId('length-mil').textContent = '—';
+      byId('length-inch').textContent = '—';
+      return;
+    }
+
+    let mm = null;
+    if (unit === 'mm') mm = val;
+    else if (unit === 'mil') mm = (val / MIL_PER_INCH) * MM_PER_INCH;
+    else if (unit === 'inch') mm = val * MM_PER_INCH;
+
+    if (mm == null) return;
+    const inch = mm / MM_PER_INCH;
+    const mil = inch * MIL_PER_INCH;
+
+    byId('length-mm').textContent = formatNum(mm, 4);
+    byId('length-mil').textContent = formatNum(mil, 2);
+    byId('length-inch').textContent = formatNum(inch, 6);
+  }
+
+  byId('length-val').addEventListener('input', updateLengthConvert);
+  byId('length-unit').addEventListener('change', updateLengthConvert);
+  updateLengthConvert();
+
+  // ——— 誤差範圍：標稱值 ± tolerance% → max, min ———
+  function updateTolerance() {
+    const val = num(byId('tol-val').value);
+    const pct = num(byId('tol-pct').value);
+
+    if (val == null || pct == null || pct < 0) {
+      byId('tol-max').textContent = '—';
+      byId('tol-min').textContent = '—';
+      return;
+    }
+
+    const factor = pct / 100;
+    const maxVal = val * (1 + factor);
+    const minVal = val * (1 - factor);
+
+    byId('tol-max').textContent = formatNum(maxVal, 4);
+    byId('tol-min').textContent = formatNum(minVal, 4);
+  }
+
+  ['tol-val', 'tol-pct'].forEach(function (id) {
+    byId(id).addEventListener('input', updateTolerance);
+  });
+  updateTolerance();
+
+  // ——— dBm / dBmV 換算；dBm = 10*log10(P_mW)，dBmV = 20*log10(V_mV)；50Ω 時 P_mW = V_mV^2/(R*1000) ———
+  function updateDbmDbmv() {
+    const val = num(byId('dbm-dbmv-val').value);
+    const unit = byId('dbm-dbmv-unit').value;
+    const R = num(byId('dbm-dbmv-r').value) || 50;
+
+    if (val == null) {
+      byId('dbm-dbmv-dbm').textContent = '—';
+      byId('dbm-dbmv-dbmv').textContent = '—';
+      byId('dbm-dbmv-mw-mv').textContent = '—';
+      return;
+    }
+
+    let pMw = null;
+    let vMv = null;
+
+    if (unit === 'dBm') {
+      pMw = Math.pow(10, val / 10);
+      vMv = Math.sqrt(pMw * R); // P(mW)=V(mV)^2/R => V(mV)=sqrt(P*R)，此處 R 用歐姆，V 用 mV 則 V_mV = sqrt(P_mW * R)
+      // 正確：P_W = V^2/R => V = sqrt(P*R)。P_mW = P_W*1000，V_V = V_mV/1000 => P_mW/1000 = (V_mV/1000)^2/R => V_mV = sqrt(P_mW*R/1000)*1000 = sqrt(P_mW*R*1000)
+      vMv = Math.sqrt(pMw * R * 1000);
+    } else if (unit === 'dBmV') {
+      vMv = Math.pow(10, val / 20);
+      pMw = (vMv * vMv) / (R * 1000); // V_mV, R 歐姆：P_W = (V_mV/1000)^2/R，P_mW = 1000*P_W = V_mV^2/(R*1000)
+    } else if (unit === 'mW') {
+      pMw = val;
+      vMv = Math.sqrt(pMw * R * 1000);
+    } else if (unit === 'mV') {
+      vMv = val;
+      pMw = (vMv * vMv) / (R * 1000);
+    }
+
+    if (pMw != null && pMw > 0) {
+      const dbm = 10 * Math.log10(pMw);
+      byId('dbm-dbmv-dbm').textContent = formatNum(dbm, 2);
+    } else {
+      byId('dbm-dbmv-dbm').textContent = '—';
+    }
+    if (vMv != null && vMv > 0) {
+      const dbmV = 20 * Math.log10(vMv);
+      byId('dbm-dbmv-dbmv').textContent = formatNum(dbmV, 2);
+    } else {
+      byId('dbm-dbmv-dbmv').textContent = '—';
+    }
+    if (pMw != null && vMv != null) {
+      byId('dbm-dbmv-mw-mv').textContent = formatNum(pMw, 4) + ' mW / ' + formatNum(vMv, 4) + ' mV';
+    } else {
+      byId('dbm-dbmv-mw-mv').textContent = '—';
+    }
+  }
+
+  byId('dbm-dbmv-val').addEventListener('input', updateDbmDbmv);
+  byId('dbm-dbmv-unit').addEventListener('change', updateDbmDbmv);
+  byId('dbm-dbmv-r').addEventListener('change', updateDbmDbmv);
+  updateDbmDbmv();
+
+  // ——— dBm + BW(MHz) → dBm/MHz, dBm/KHz ———
+  function updateDbmBw() {
+    const dbm = num(byId('dbm-bw-dbm').value);
+    const bwMhz = num(byId('dbm-bw-mhz').value);
+
+    if (dbm == null || bwMhz == null || bwMhz <= 0) {
+      byId('dbm-bw-per-mhz').textContent = '—';
+      byId('dbm-bw-per-khz').textContent = '—';
+      return;
+    }
+
+    const dbmPerMhz = dbm - 10 * Math.log10(bwMhz);
+    const dbmPerKhz = dbm - 10 * Math.log10(bwMhz * 1000);
+
+    byId('dbm-bw-per-mhz').textContent = formatNum(dbmPerMhz, 2);
+    byId('dbm-bw-per-khz').textContent = formatNum(dbmPerKhz, 2);
+  }
+
+  byId('dbm-bw-dbm').addEventListener('input', updateDbmBw);
+  byId('dbm-bw-mhz').addEventListener('input', updateDbmBw);
+  updateDbmBw();
 })();

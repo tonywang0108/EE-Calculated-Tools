@@ -13,7 +13,7 @@
   <div class="page">
     <header class="header">
       <h1>電子計算器 <span class="card-title-en">Electronics Calculator</span></h1>
-      <p class="tagline">分壓 · Buck/Boost · 熱敏電阻 · 隨手算 <span class="card-desc-en">Voltage divider · Buck/Boost · Thermistor · Quick calc</span></p>
+      <p class="tagline">Made by tony.wang@samsara.com</p>
     </header>
 
     <main class="calculators">
@@ -355,6 +355,147 @@
             <div class="result-value" id="r-calc">—</div>
             <div class="result-unit">Ω</div>
           </div>
+        </div>
+      </section>
+
+      <!-- mm / mil / inch 換算（含反算） -->
+      <section class="card" id="length-convert">
+        <h2>mm / mil / inch 換算 <span class="card-title-en">mm / mil / inch conversion</span></h2>
+        <p class="card-desc">輸入任一單位，換算成另外兩種 <span class="card-desc-en">Enter one unit, get the other two</span></p>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">數值</span>
+            <span class="label-en">Value</span>
+            <input type="number" id="length-val" value="1" step="any" placeholder="數值">
+          </label>
+          <label>
+            <span class="label-zh">單位</span>
+            <span class="label-en">Unit</span>
+            <select id="length-unit">
+              <option value="mm">mm</option>
+              <option value="mil">mil</option>
+              <option value="inch">inch</option>
+            </select>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">mm <span class="result-label-en">millimetres</span></div>
+          <div class="result-value" id="length-mm">—</div>
+          <div class="result-unit">mm</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">mil <span class="result-label-en">thousandths of inch</span></div>
+          <div class="result-value" id="length-mil">—</div>
+          <div class="result-unit">mil</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">inch <span class="result-label-en">inches</span></div>
+          <div class="result-value" id="length-inch">—</div>
+          <div class="result-unit">inch</div>
+        </div>
+      </section>
+
+      <!-- 誤差值計算：最大／最小 -->
+      <section class="card" id="tolerance-calc">
+        <h2>誤差範圍計算 <span class="card-title-en">Tolerance range</span></h2>
+        <p class="card-desc">輸入標稱值與誤差（%），得最大與最小值 <span class="card-desc-en">Value ± tolerance % → min / max</span></p>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">標稱值</span>
+            <span class="label-en">Nominal value</span>
+            <input type="number" id="tol-val" value="100" step="any" placeholder="值">
+          </label>
+          <label>
+            <span class="label-zh">誤差（± %）</span>
+            <span class="label-en">Tolerance (± %)</span>
+            <input type="number" id="tol-pct" value="5" step="any" min="0" placeholder="%">
+            <span class="unit">%</span>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">最大值 <span class="result-label-en">Maximum</span></div>
+          <div class="result-value" id="tol-max">—</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">最小值 <span class="result-label-en">Minimum</span></div>
+          <div class="result-value" id="tol-min">—</div>
+        </div>
+      </section>
+
+      <!-- dBm 與 dBmV 換算（含反算） -->
+      <section class="card" id="dbm-dbmv">
+        <h2>dBm / dBmV 換算 <span class="card-title-en">dBm / dBmV conversion</span></h2>
+        <p class="card-desc">功率 dBm ↔ 電壓 dBmV（需參考阻抗）；含 mW、mV 反算 <span class="card-desc-en">Power ↔ voltage; ref impedance for cross-conversion</span></p>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">輸入數值</span>
+            <span class="label-en">Input value</span>
+            <input type="number" id="dbm-dbmv-val" value="0" step="any" placeholder="數值">
+          </label>
+          <label>
+            <span class="label-zh">單位</span>
+            <span class="label-en">Unit</span>
+            <select id="dbm-dbmv-unit">
+              <option value="dBm">dBm</option>
+              <option value="dBmV">dBmV</option>
+              <option value="mW">mW</option>
+              <option value="mV">mV</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>
+            <span class="label-zh">參考阻抗（dBm↔dBmV 用）</span>
+            <span class="label-en">Reference impedance (for dBm↔dBmV)</span>
+            <select id="dbm-dbmv-r">
+              <option value="50">50 Ω</option>
+              <option value="75">75 Ω</option>
+            </select>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">dBm <span class="result-label-en">dBm</span></div>
+          <div class="result-value" id="dbm-dbmv-dbm">—</div>
+          <div class="result-unit">dBm</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">dBmV <span class="result-label-en">dBmV</span></div>
+          <div class="result-value" id="dbm-dbmv-dbmv">—</div>
+          <div class="result-unit">dBmV</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">mW / mV <span class="result-label-en">mW / mV</span></div>
+          <div class="result-value" id="dbm-dbmv-mw-mv">—</div>
+        </div>
+      </section>
+
+      <!-- dBm + BW → dBm/MHz, dBm/KHz -->
+      <section class="card" id="dbm-bw">
+        <h2>dBm 與頻寬 → 功率密度 <span class="card-title-en">dBm + BW → power density</span></h2>
+        <p class="card-desc">輸入 dBm 與頻寬 (MHz)，得 dBm/MHz、dBm/KHz <span class="card-desc-en">dBm and BW (MHz) → dBm/MHz, dBm/KHz</span></p>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">功率 dBm</span>
+            <span class="label-en">Power dBm</span>
+            <input type="number" id="dbm-bw-dbm" value="0" step="any" placeholder="dBm">
+            <span class="unit">dBm</span>
+          </label>
+          <label>
+            <span class="label-zh">頻寬 BW</span>
+            <span class="label-en">Bandwidth BW</span>
+            <input type="number" id="dbm-bw-mhz" value="1" step="any" min="0" placeholder="MHz">
+            <span class="unit">MHz</span>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">dBm/MHz <span class="result-label-en">per MHz</span></div>
+          <div class="result-value" id="dbm-bw-per-mhz">—</div>
+          <div class="result-unit">dBm/MHz</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">dBm/KHz <span class="result-label-en">per KHz</span></div>
+          <div class="result-value" id="dbm-bw-per-khz">—</div>
+          <div class="result-unit">dBm/KHz</div>
         </div>
       </section>
     </main>
