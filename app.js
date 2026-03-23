@@ -393,4 +393,109 @@
   byId('dbm-bw-dbm').addEventListener('input', updateDbmBw);
   byId('dbm-bw-mhz').addEventListener('input', updateDbmBw);
   updateDbmBw();
+
+  const PI2 = 2 * Math.PI;
+
+  function capToFarad(val, unit) {
+    if (val == null || val <= 0) return null;
+    if (unit === 'pF') return val * 1e-12;
+    if (unit === 'nF') return val * 1e-9;
+    if (unit === 'uF') return val * 1e-6;
+    return null;
+  }
+
+  function inductToHenry(val, unit) {
+    if (val == null || val <= 0) return null;
+    if (unit === 'nH') return val * 1e-9;
+    if (unit === 'uH') return val * 1e-6;
+    if (unit === 'mH') return val * 1e-3;
+    return null;
+  }
+
+  // ——— 理想電抗：|X_L| = 2πfL，|X_C| = 1/(2πfC) ———
+  function updateReactance() {
+    const fMhz = num(byId('react-f-mhz').value);
+    const lNh = num(byId('react-l-nh').value);
+    const cVal = num(byId('react-c-val').value);
+    const cUnit = byId('react-c-unit').value;
+
+    if (fMhz == null || fMhz <= 0) {
+      byId('react-xl').textContent = '—';
+      byId('react-xc').textContent = '—';
+      return;
+    }
+
+    const fHz = fMhz * 1e6;
+    const omega = PI2 * fHz;
+
+    let xl = null;
+    if (lNh != null && lNh > 0) {
+      const lH = lNh * 1e-9;
+      xl = omega * lH;
+    }
+
+    let xc = null;
+    const cF = capToFarad(cVal, cUnit);
+    if (cF != null && cF > 0) {
+      xc = 1 / (omega * cF);
+    }
+
+    byId('react-xl').textContent = xl != null ? formatNum(xl, 4) : '—';
+    byId('react-xc').textContent = xc != null ? formatNum(xc, 4) : '—';
+  }
+
+  ['react-f-mhz', 'react-l-nh', 'react-c-val'].forEach(function (id) {
+    byId(id).addEventListener('input', updateReactance);
+  });
+  byId('react-c-unit').addEventListener('change', updateReactance);
+  updateReactance();
+
+  // ——— LC f₀ = 1/(2π√(LC))；√(LC)、T = 2π√(LC)；RC τ、f_c ———
+  function updateFilterLcRc() {
+    const lVal = num(byId('filter-l-val').value);
+    const lUnit = byId('filter-l-unit').value;
+    const cVal = num(byId('filter-c-val').value);
+    const cUnit = byId('filter-c-unit').value;
+    const rOhm = num(byId('filter-r-ohm').value);
+    const rcCVal = num(byId('filter-rc-c-val').value);
+    const rcCUnit = byId('filter-rc-c-unit').value;
+
+    const lH = inductToHenry(lVal, lUnit);
+    const cF = capToFarad(cVal, cUnit);
+
+    if (lH == null || cF == null) {
+      byId('filter-f0').textContent = '—';
+      byId('filter-lc-delay').textContent = '—';
+    } else {
+      const lc = lH * cF;
+      const sqrtLc = Math.sqrt(lc);
+      const f0 = 1 / (PI2 * sqrtLc);
+      const T = PI2 * sqrtLc;
+      byId('filter-f0').textContent =
+        formatNum(f0, 2) + ' Hz（' + formatNum(f0 / 1e6, 6) + ' MHz）';
+      byId('filter-lc-delay').textContent =
+        '√(LC) = ' + formatNum(sqrtLc, 4) + ' s · T = ' + formatNum(T, 4) + ' s';
+    }
+
+    const rcCF = capToFarad(rcCVal, rcCUnit);
+    if (rOhm == null || rOhm <= 0 || rcCF == null || rcCF <= 0) {
+      byId('filter-tau-rc').textContent = '—';
+      byId('filter-fc-rc').textContent = '—';
+    } else {
+      const tau = rOhm * rcCF;
+      const fc = 1 / (PI2 * rOhm * rcCF);
+      byId('filter-tau-rc').textContent =
+        formatNum(tau, 4) + ' s（' + formatNum(tau * 1e6, 4) + ' µs · ' + formatNum(tau * 1e9, 2) + ' ns）';
+      byId('filter-fc-rc').textContent =
+        formatNum(fc, 4) + ' Hz（' + formatNum(fc / 1e3, 4) + ' kHz）';
+    }
+  }
+
+  ['filter-l-val', 'filter-c-val', 'filter-r-ohm', 'filter-rc-c-val'].forEach(function (id) {
+    byId(id).addEventListener('input', updateFilterLcRc);
+  });
+  ['filter-l-unit', 'filter-c-unit', 'filter-rc-c-unit'].forEach(function (id) {
+    byId(id).addEventListener('change', updateFilterLcRc);
+  });
+  updateFilterLcRc();
 })();

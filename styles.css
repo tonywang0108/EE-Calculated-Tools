@@ -94,6 +94,21 @@ body {
   color: var(--text);
 }
 
+.card-subtitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  color: var(--accent);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.card .card-subtitle:first-of-type {
+  margin-top: 0.5rem;
+  padding-top: 0;
+  border-top: none;
+}
+
 .card-title-en {
   display: block;
   font-size: 0.7rem;

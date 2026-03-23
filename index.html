@@ -498,6 +498,115 @@
           <div class="result-unit">dBm/KHz</div>
         </div>
       </section>
+
+      <!-- 理想電抗：L、C 與頻率 → |X| -->
+      <section class="card" id="reactance-lc">
+        <h2>理想電感／電容阻抗 <span class="card-title-en">Ideal L/C reactance |X|</span></h2>
+        <p class="card-desc">|X_L| = 2πfL，|X_C| = 1/(2πfC)；電容單位可選 µF／nF／pF <span class="card-desc-en">Inductance nH; capacitance µF/nF/pF</span></p>
+        <div class="form-row">
+          <label>
+            <span class="label-zh">頻率 f（L、C 共用）</span>
+            <span class="label-en">Frequency f (shared)</span>
+            <input type="number" id="react-f-mhz" value="100" step="any" min="0" placeholder="MHz">
+            <span class="unit">MHz</span>
+          </label>
+        </div>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">電感 L</span>
+            <span class="label-en">Inductance L</span>
+            <input type="number" id="react-l-nh" value="10" step="any" min="0" placeholder="nH">
+            <span class="unit">nH</span>
+          </label>
+          <label>
+            <span class="label-zh">電容 C</span>
+            <span class="label-en">Capacitance C</span>
+            <input type="number" id="react-c-val" value="1" step="any" min="0" placeholder="數值">
+            <select id="react-c-unit">
+              <option value="pF">pF</option>
+              <option value="nF">nF</option>
+              <option value="uF" selected>µF</option>
+            </select>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">|X_L|（電感抗） <span class="result-label-en">Inductive reactance</span></div>
+          <div class="result-value" id="react-xl">—</div>
+          <div class="result-unit">Ω</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">|X_C|（電容抗） <span class="result-label-en">Capacitive reactance</span></div>
+          <div class="result-value" id="react-xc">—</div>
+          <div class="result-unit">Ω</div>
+        </div>
+      </section>
+
+      <!-- LC 截止／週期 + RC 延遲 -->
+      <section class="card" id="filter-lc-rc">
+        <h2>LC／RC 濾波與延遲 <span class="card-title-en">LC cutoff &amp; RC delay</span></h2>
+        <p class="card-desc">LC：f₀ = 1/(2π√(LC))、週期 T = 2π√(LC)。RC：τ = RC、f₋₃dB = 1/(2πRC) <span class="card-desc-en">Resonant f₀; RC time constant &amp; −3 dB corner</span></p>
+        <h3 class="card-subtitle">LC <span class="card-title-en">LC</span></h3>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">電感 L</span>
+            <span class="label-en">Inductance L</span>
+            <input type="number" id="filter-l-val" value="10" step="any" min="0" placeholder="數值">
+            <select id="filter-l-unit">
+              <option value="nH">nH</option>
+              <option value="uH" selected>µH</option>
+              <option value="mH">mH</option>
+            </select>
+          </label>
+          <label>
+            <span class="label-zh">電容 C</span>
+            <span class="label-en">Capacitance C</span>
+            <input type="number" id="filter-c-val" value="100" step="any" min="0" placeholder="數值">
+            <select id="filter-c-unit">
+              <option value="pF" selected>pF</option>
+              <option value="nF">nF</option>
+              <option value="uF">µF</option>
+            </select>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">截止／諧振頻率 f₀ <span class="result-label-en">Cutoff / resonant f₀</span></div>
+          <div class="result-value" id="filter-f0">—</div>
+          <div class="result-unit">Hz（另顯 MHz）</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">√(LC) 與週期 T = 2π√(LC) <span class="result-label-en">√(LC) &amp; period</span></div>
+          <div class="result-value" id="filter-lc-delay">—</div>
+        </div>
+        <h3 class="card-subtitle">RC <span class="card-title-en">RC</span></h3>
+        <div class="form-row two-cols">
+          <label>
+            <span class="label-zh">電阻 R</span>
+            <span class="label-en">Resistance R</span>
+            <input type="number" id="filter-r-ohm" value="10000" step="any" min="0" placeholder="Ω">
+            <span class="unit">Ω</span>
+          </label>
+          <label>
+            <span class="label-zh">電容 C</span>
+            <span class="label-en">Capacitance C</span>
+            <input type="number" id="filter-rc-c-val" value="1" step="any" min="0" placeholder="數值">
+            <select id="filter-rc-c-unit">
+              <option value="pF">pF</option>
+              <option value="nF">nF</option>
+              <option value="uF" selected>µF</option>
+            </select>
+          </label>
+        </div>
+        <div class="result-box">
+          <div class="result-label">時間常數 τ = RC <span class="result-label-en">Time constant τ</span></div>
+          <div class="result-value" id="filter-tau-rc">—</div>
+          <div class="result-unit">s（另顯 µs、ns）</div>
+        </div>
+        <div class="result-box secondary">
+          <div class="result-label">−3 dB 截止頻率 f_c <span class="result-label-en">−3 dB corner f_c</span></div>
+          <div class="result-value" id="filter-fc-rc">—</div>
+          <div class="result-unit">Hz（另顯 kHz）</div>
+        </div>
+      </section>
     </main>
 
     <footer class="footer">
