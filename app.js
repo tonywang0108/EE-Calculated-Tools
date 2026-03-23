@@ -450,15 +450,12 @@
   byId('react-c-unit').addEventListener('change', updateReactance);
   updateReactance();
 
-  // ——— LC f₀ = 1/(2π√(LC))；√(LC)、T = 2π√(LC)；RC τ、f_c ———
-  function updateFilterLcRc() {
+  // ——— LC f₀ = 1/(2π√(LC))；√(LC)、T = 2π√(LC) ———
+  function updateFilterLc() {
     const lVal = num(byId('filter-l-val').value);
     const lUnit = byId('filter-l-unit').value;
     const cVal = num(byId('filter-c-val').value);
     const cUnit = byId('filter-c-unit').value;
-    const rOhm = num(byId('filter-r-ohm').value);
-    const rcCVal = num(byId('filter-rc-c-val').value);
-    const rcCUnit = byId('filter-rc-c-unit').value;
 
     const lH = inductToHenry(lVal, lUnit);
     const cF = capToFarad(cVal, cUnit);
@@ -466,36 +463,51 @@
     if (lH == null || cF == null) {
       byId('filter-f0').textContent = '—';
       byId('filter-lc-delay').textContent = '—';
-    } else {
-      const lc = lH * cF;
-      const sqrtLc = Math.sqrt(lc);
-      const f0 = 1 / (PI2 * sqrtLc);
-      const T = PI2 * sqrtLc;
-      byId('filter-f0').textContent =
-        formatNum(f0, 2) + ' Hz（' + formatNum(f0 / 1e6, 6) + ' MHz）';
-      byId('filter-lc-delay').textContent =
-        '√(LC) = ' + formatNum(sqrtLc, 4) + ' s · T = ' + formatNum(T, 4) + ' s';
+      return;
     }
+
+    const lc = lH * cF;
+    const sqrtLc = Math.sqrt(lc);
+    const f0 = 1 / (PI2 * sqrtLc);
+    const T = PI2 * sqrtLc;
+    byId('filter-f0').textContent =
+      formatNum(f0, 2) + ' Hz（' + formatNum(f0 / 1e6, 6) + ' MHz）';
+    byId('filter-lc-delay').textContent =
+      '√(LC) = ' + formatNum(sqrtLc, 4) + ' s · T = ' + formatNum(T, 4) + ' s';
+  }
+
+  ['filter-l-val', 'filter-c-val'].forEach(function (id) {
+    byId(id).addEventListener('input', updateFilterLc);
+  });
+  ['filter-l-unit', 'filter-c-unit'].forEach(function (id) {
+    byId(id).addEventListener('change', updateFilterLc);
+  });
+  updateFilterLc();
+
+  // ——— RC τ = RC、f_c = 1/(2πRC) ———
+  function updateRcDelay() {
+    const rOhm = num(byId('filter-r-ohm').value);
+    const rcCVal = num(byId('filter-rc-c-val').value);
+    const rcCUnit = byId('filter-rc-c-unit').value;
 
     const rcCF = capToFarad(rcCVal, rcCUnit);
     if (rOhm == null || rOhm <= 0 || rcCF == null || rcCF <= 0) {
       byId('filter-tau-rc').textContent = '—';
       byId('filter-fc-rc').textContent = '—';
-    } else {
-      const tau = rOhm * rcCF;
-      const fc = 1 / (PI2 * rOhm * rcCF);
-      byId('filter-tau-rc').textContent =
-        formatNum(tau, 4) + ' s（' + formatNum(tau * 1e6, 4) + ' µs · ' + formatNum(tau * 1e9, 2) + ' ns）';
-      byId('filter-fc-rc').textContent =
-        formatNum(fc, 4) + ' Hz（' + formatNum(fc / 1e3, 4) + ' kHz）';
+      return;
     }
+
+    const tau = rOhm * rcCF;
+    const fc = 1 / (PI2 * rOhm * rcCF);
+    byId('filter-tau-rc').textContent =
+      formatNum(tau, 4) + ' s（' + formatNum(tau * 1e6, 4) + ' µs · ' + formatNum(tau * 1e9, 2) + ' ns）';
+    byId('filter-fc-rc').textContent =
+      formatNum(fc, 4) + ' Hz（' + formatNum(fc / 1e3, 4) + ' kHz）';
   }
 
-  ['filter-l-val', 'filter-c-val', 'filter-r-ohm', 'filter-rc-c-val'].forEach(function (id) {
-    byId(id).addEventListener('input', updateFilterLcRc);
+  ['filter-r-ohm', 'filter-rc-c-val'].forEach(function (id) {
+    byId(id).addEventListener('input', updateRcDelay);
   });
-  ['filter-l-unit', 'filter-c-unit', 'filter-rc-c-unit'].forEach(function (id) {
-    byId(id).addEventListener('change', updateFilterLcRc);
-  });
-  updateFilterLcRc();
+  byId('filter-rc-c-unit').addEventListener('change', updateRcDelay);
+  updateRcDelay();
 })();

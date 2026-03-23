@@ -541,11 +541,10 @@
         </div>
       </section>
 
-      <!-- LC 截止／週期 + RC 延遲 -->
-      <section class="card" id="filter-lc-rc">
-        <h2>LC／RC 濾波與延遲 <span class="card-title-en">LC cutoff &amp; RC delay</span></h2>
-        <p class="card-desc">LC：f₀ = 1/(2π√(LC))、週期 T = 2π√(LC)。RC：τ = RC、f₋₃dB = 1/(2πRC) <span class="card-desc-en">Resonant f₀; RC time constant &amp; −3 dB corner</span></p>
-        <h3 class="card-subtitle">LC <span class="card-title-en">LC</span></h3>
+      <!-- LC 截止／週期 -->
+      <section class="card" id="filter-lc">
+        <h2>LC 截止／諧振 <span class="card-title-en">LC cutoff / resonant</span></h2>
+        <p class="card-desc">f₀ = 1/(2π√(LC))、週期 T = 2π√(LC) <span class="card-desc-en">Resonant f₀ and period</span></p>
         <div class="form-row two-cols">
           <label>
             <span class="label-zh">電感 L</span>
@@ -577,7 +576,12 @@
           <div class="result-label">√(LC) 與週期 T = 2π√(LC) <span class="result-label-en">√(LC) &amp; period</span></div>
           <div class="result-value" id="filter-lc-delay">—</div>
         </div>
-        <h3 class="card-subtitle">RC <span class="card-title-en">RC</span></h3>
+      </section>
+
+      <!-- RC 延遲／截止 -->
+      <section class="card" id="filter-rc-delay">
+        <h2>RC 延遲與截止 <span class="card-title-en">RC delay &amp; corner</span></h2>
+        <p class="card-desc">時間常數 τ = RC；一階低通 −3 dB 截止 f_c = 1/(2πRC) <span class="card-desc-en">τ and −3 dB corner</span></p>
         <div class="form-row two-cols">
           <label>
             <span class="label-zh">電阻 R</span>
