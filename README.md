@@ -19,5 +19,6 @@
 - **理想電感／電容阻抗**：輸入頻率 (MHz)、電感 (nH)、電容 (µF／nF／pF)，得 |X_L|、|X_C|（Ω）
 - **LC 截止／諧振**：f₀ = 1/(2π√(LC))、√(LC) 與週期 T
 - **RC 延遲與截止**：τ = RC、一階低通 −3 dB 截止 f_c = 1/(2πRC)
+- **Antenna Gain Budget**：RF link budget（Friis），含 FSPL、EIRP、Noise floor、Sensitivity 與 Link margin（另開新分頁）
 
 版面為一排 3 個計算器（響應式），標示為中英雙語。

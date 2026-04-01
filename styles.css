@@ -54,6 +54,42 @@ body {
   font-size: 0.95rem;
 }
 
+.header-actions {
+  margin-top: 0.9rem;
+  display: flex;
+  justify-content: center;
+}
+
+.header-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.header-link:hover {
+  background: var(--surface-hover);
+  border-color: #353540;
+  transform: translateY(-1px);
+}
+
+.header-link:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+.header-link-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 /* Cards — 一排 3 個，小螢幕 1～2 欄 */
 .calculators {
   display: grid;

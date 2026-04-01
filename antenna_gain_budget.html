@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antenna Gain Budget Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #7ec8e3;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .madeby {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #666;
+      margin-bottom: 28px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 700px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .card h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #7ec8e3;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2a2d3a;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    .field label {
+      flex: 1;
+      font-size: 0.85rem;
+      color: #aaa;
+      white-space: nowrap;
+    }
+
+    .field label span.sym {
+      font-size: 0.75rem;
+      color: #555;
+      display: block;
+    }
+
+    .field input, .field select {
+      width: 120px;
+      background: #12141e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      padding: 6px 10px;
+      text-align: right;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus, .field select:focus { border-color: #7ec8e3; }
+
+    .field .unit {
+      font-size: 0.78rem;
+      color: #555;
+      width: 36px;
+      text-align: left;
+    }
+
+    .results-card {
+      grid-column: 1 / -1;
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .results-card h2 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #7ec8e3;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2a2d3a;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    .result-item {
+      background: #12141e;
+      border: 1px solid #2a2d3a;
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .result-item .label {
+      font-size: 0.76rem;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .result-item .value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #e0e0e0;
+    }
+
+    .result-item .value .unit {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: #666;
+      margin-left: 4px;
+    }
+
+    .result-item.highlight { border-color: #7ec8e3; }
+    .result-item.highlight .value { color: #7ec8e3; }
+    .result-item.good .value { color: #4caf7d; }
+    .result-item.warn .value { color: #f0a500; }
+    .result-item.bad  .value { color: #e05c5c; }
+
+    .budget-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 0.85rem;
+    }
+
+    .budget-table th {
+      text-align: left;
+      color: #555;
+      font-weight: 500;
+      padding: 6px 10px;
+      border-bottom: 1px solid #2a2d3a;
+    }
+
+    .budget-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #1e2130;
+      color: #bbb;
+    }
+
+    .budget-table td.num {
+      text-align: right;
+      font-family: 'Courier New', monospace;
+      color: #e0e0e0;
+    }
+
+    .budget-table td.pos { color: #4caf7d; }
+    .budget-table td.neg { color: #e05c5c; }
+
+    .budget-table tr.total td {
+      border-top: 1px solid #3a3d4a;
+      font-weight: 700;
+      color: #7ec8e3;
+    }
+
+    .btn {
+      display: block;
+      margin: 20px auto 0;
+      padding: 10px 36px;
+      background: #7ec8e3;
+      color: #0f1117;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #a3d9ee; }
+    .freq-row { display: flex; gap: 8px; align-items: center; }
+    .freq-row input { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>Antenna Gain Budget Calculator</h1>
+  <p class="subtitle">RF Link Budget / Friis Transmission Equation</p>
+  <p class="madeby">Made by tony.wang@samsara.com</p>
+
+  <div class="layout">
+    <div class="card">
+      <h2>Transmitter (TX)</h2>
+      <div class="field">
+        <label>TX Power <span class="sym">P<sub>t</sub></span></label>
+        <input type="number" id="txPower" value="20" step="0.1">
+        <span class="unit">dBm</span>
+      </div>
+      <div class="field">
+        <label>TX Antenna Gain <span class="sym">G<sub>t</sub></span></label>
+        <input type="number" id="txGain" value="3" step="0.1">
+        <span class="unit">dBi</span>
+      </div>
+      <div class="field">
+        <label>TX Cable Loss <span class="sym">L<sub>cable,t</sub></span></label>
+        <input type="number" id="txCableLoss" value="1" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+      <div class="field">
+        <label>TX Connector Loss <span class="sym">L<sub>conn,t</sub></span></label>
+        <input type="number" id="txConnLoss" value="0.5" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Channel / Propagation</h2>
+      <div class="field">
+        <label>Frequency <span class="sym">f</span></label>
+        <div class="freq-row">
+          <input type="number" id="freq" value="2400" step="1" min="1">
+          <select id="freqUnit">
+            <option value="MHz" selected>MHz</option>
+            <option value="GHz">GHz</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Distance <span class="sym">d</span></label>
+        <div class="freq-row">
+          <input type="number" id="distance" value="1" step="0.001" min="0.001">
+          <select id="distUnit">
+            <option value="km" selected>km</option>
+            <option value="m">m</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Additional Path Loss <span class="sym">L<sub>extra</sub></span></label>
+        <input type="number" id="extraLoss" value="0" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+      <div class="field">
+        <label>Atmospheric Loss <span class="sym">L<sub>atm</sub></span></label>
+        <input type="number" id="atmLoss" value="0" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Receiver (RX)</h2>
+      <div class="field">
+        <label>RX Antenna Gain <span class="sym">G<sub>r</sub></span></label>
+        <input type="number" id="rxGain" value="3" step="0.1">
+        <span class="unit">dBi</span>
+      </div>
+      <div class="field">
+        <label>RX Cable Loss <span class="sym">L<sub>cable,r</sub></span></label>
+        <input type="number" id="rxCableLoss" value="1" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+      <div class="field">
+        <label>RX Connector Loss <span class="sym">L<sub>conn,r</sub></span></label>
+        <input type="number" id="rxConnLoss" value="0.5" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+      <div class="field">
+        <label>Noise Figure <span class="sym">NF</span></label>
+        <input type="number" id="noiseFig" value="5" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>System Requirements</h2>
+      <div class="field">
+        <label>Bandwidth <span class="sym">B</span></label>
+        <div class="freq-row">
+          <input type="number" id="bandwidth" value="20" step="0.1" min="0.001">
+          <select id="bwUnit">
+            <option value="MHz" selected>MHz</option>
+            <option value="kHz">kHz</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Required SNR <span class="sym">SNR<sub>req</sub></span></label>
+        <input type="number" id="reqSNR" value="10" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+      <div class="field">
+        <label>Implementation Loss <span class="sym">L<sub>impl</sub></span></label>
+        <input type="number" id="implLoss" value="2" step="0.1">
+        <span class="unit">dB</span>
+      </div>
+      <div class="field">
+        <label>Temperature <span class="sym">T</span></label>
+        <input type="number" id="temperature" value="290" step="1">
+        <span class="unit">K</span>
+      </div>
+    </div>
+
+    <div class="results-card">
+      <h2>Link Budget Results</h2>
+      <div class="results-grid">
+        <div class="result-item highlight">
+          <div class="label">Received Power (P<sub>r</sub>)</div>
+          <div class="value" id="res_pr">—<span class="unit">dBm</span></div>
+        </div>
+        <div class="result-item highlight">
+          <div class="label">Free Space Path Loss (FSPL)</div>
+          <div class="value" id="res_fspl">—<span class="unit">dB</span></div>
+        </div>
+        <div class="result-item">
+          <div class="label">EIRP</div>
+          <div class="value" id="res_eirp">—<span class="unit">dBm</span></div>
+        </div>
+        <div class="result-item">
+          <div class="label">Total System Loss</div>
+          <div class="value" id="res_loss">—<span class="unit">dB</span></div>
+        </div>
+        <div class="result-item">
+          <div class="label">Noise Power (kTB)</div>
+          <div class="value" id="res_noise">—<span class="unit">dBm</span></div>
+        </div>
+        <div class="result-item">
+          <div class="label">Noise Floor (with NF)</div>
+          <div class="value" id="res_noisefloor">—<span class="unit">dBm</span></div>
+        </div>
+        <div class="result-item">
+          <div class="label">Sensitivity (MDS)</div>
+          <div class="value" id="res_sens">—<span class="unit">dBm</span></div>
+        </div>
+        <div class="result-item" id="margin_item">
+          <div class="label">Link Margin</div>
+          <div class="value" id="res_margin">—<span class="unit">dB</span></div>
+        </div>
+      </div>
+
+      <table class="budget-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Symbol</th>
+            <th style="text-align:right">Value (dB / dBm)</th>
+            <th style="text-align:right">Running Total (dBm)</th>
+          </tr>
+        </thead>
+        <tbody id="budgetBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <button class="btn" onclick="calculate()">Calculate</button>
+
+  <script>
+    const k = 1.380649e-23; // Boltzmann constant
+
+    function fmt(v) {
+      return (Math.round(v * 100) / 100).toFixed(2);
+    }
+
+    function setHtml(id, html) {
+      document.getElementById(id).innerHTML = html;
+    }
+
+    function calculate() {
+      const Pt = parseFloat(document.getElementById('txPower').value);
+      const Gt = parseFloat(document.getElementById('txGain').value);
+      const Lct = parseFloat(document.getElementById('txCableLoss').value);
+      const Lcnt = parseFloat(document.getElementById('txConnLoss').value);
+
+      let f_raw = parseFloat(document.getElementById('freq').value);
+      const fUnit = document.getElementById('freqUnit').value;
+      const f_Hz = fUnit === 'GHz' ? f_raw * 1e9 : f_raw * 1e6;
+
+      let d_raw = parseFloat(document.getElementById('distance').value);
+      const dUnit = document.getElementById('distUnit').value;
+      const d_km = dUnit === 'm' ? d_raw / 1000 : d_raw;
+
+      const Lextra = parseFloat(document.getElementById('extraLoss').value);
+      const Latm = parseFloat(document.getElementById('atmLoss').value);
+
+      const Gr = parseFloat(document.getElementById('rxGain').value);
+      const Lcr = parseFloat(document.getElementById('rxCableLoss').value);
+      const Lcnr = parseFloat(document.getElementById('rxConnLoss').value);
+      const NF = parseFloat(document.getElementById('noiseFig').value);
+
+      let B_raw = parseFloat(document.getElementById('bandwidth').value);
+      const bwUnit = document.getElementById('bwUnit').value;
+      const B_Hz = bwUnit === 'kHz' ? B_raw * 1e3 : B_raw * 1e6;
+
+      const SNR_req = parseFloat(document.getElementById('reqSNR').value);
+      const Limpl = parseFloat(document.getElementById('implLoss').value);
+      const T = parseFloat(document.getElementById('temperature').value);
+
+      const c = 3e8;
+      const FSPL = 20 * Math.log10(4 * Math.PI * d_km * 1000 * f_Hz / c);
+      const EIRP = Pt + Gt - Lct - Lcnt;
+      const totalLoss = FSPL + Lextra + Latm + Lcr + Lcnr;
+      const Pr = EIRP - totalLoss + Gr;
+
+      const noise_W = k * T * B_Hz;
+      const noise_dBm = 10 * Math.log10(noise_W / 1e-3);
+      const noiseFloor = noise_dBm + NF;
+      const sensitivity = noiseFloor + SNR_req + Limpl;
+      const margin = Pr - sensitivity;
+
+      setHtml('res_pr', fmt(Pr) + '<span class="unit">dBm</span>');
+      setHtml('res_fspl', fmt(FSPL) + '<span class="unit">dB</span>');
+      setHtml('res_eirp', fmt(EIRP) + '<span class="unit">dBm</span>');
+      setHtml('res_loss', fmt(totalLoss) + '<span class="unit">dB</span>');
+      setHtml('res_noise', fmt(noise_dBm) + '<span class="unit">dBm</span>');
+      setHtml('res_noisefloor', fmt(noiseFloor) + '<span class="unit">dBm</span>');
+      setHtml('res_sens', fmt(sensitivity) + '<span class="unit">dBm</span>');
+      setHtml('res_margin', fmt(margin) + '<span class="unit">dB</span>');
+
+      const mi = document.getElementById('margin_item');
+      mi.className = 'result-item ' + (margin >= 10 ? 'good' : margin >= 0 ? 'warn' : 'bad');
+
+      const rows = [
+        { label: 'TX Power', sym: 'P_t', val: Pt, running: Pt },
+        { label: 'TX Antenna Gain', sym: 'G_t', val: '+' + Gt, running: Pt + Gt },
+        { label: 'TX Cable Loss', sym: '-L_cable,t', val: '-' + Lct, running: Pt + Gt - Lct },
+        { label: 'TX Connector Loss', sym: '-L_conn,t', val: '-' + Lcnt, running: Pt + Gt - Lct - Lcnt },
+        { label: 'EIRP', sym: 'EIRP', val: null, running: EIRP, total: true },
+        { label: 'Free Space Path Loss', sym: '-FSPL', val: '-' + fmt(FSPL), running: EIRP - FSPL },
+        { label: 'Extra Path Loss', sym: '-L_extra', val: '-' + Lextra, running: EIRP - FSPL - Lextra },
+        { label: 'Atmospheric Loss', sym: '-L_atm', val: '-' + Latm, running: EIRP - FSPL - Lextra - Latm },
+        { label: 'RX Antenna Gain', sym: '+G_r', val: '+' + Gr, running: EIRP - FSPL - Lextra - Latm + Gr },
+        { label: 'RX Cable Loss', sym: '-L_cable,r', val: '-' + Lcr, running: EIRP - FSPL - Lextra - Latm + Gr - Lcr },
+        { label: 'RX Connector Loss', sym: '-L_conn,r', val: '-' + Lcnr, running: Pr },
+        { label: 'Received Power', sym: 'P_r', val: null, running: Pr, total: true },
+        { label: 'Noise Floor (NF incl.)', sym: 'N_floor', val: fmt(noiseFloor), running: null },
+        { label: 'Required SNR', sym: 'SNR_req', val: SNR_req, running: null },
+        { label: 'Implementation Loss', sym: 'L_impl', val: Limpl, running: null },
+        { label: 'Sensitivity (MDS)', sym: 'MDS', val: fmt(sensitivity), running: null, total: true },
+        { label: 'Link Margin', sym: 'M_link', val: fmt(margin), running: null, total: true, margin: true },
+      ];
+
+      const tbody = document.getElementById('budgetBody');
+      tbody.innerHTML = '';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        if (r.total) tr.className = 'total';
+        const runStr = r.running !== null && r.running !== undefined ? fmt(r.running) + ' dBm' : '';
+        const valStr = r.val !== null && r.val !== undefined ? String(r.val) : '';
+        const valClass = r.margin ? (margin >= 0 ? 'pos' : 'neg') : '';
+        tr.innerHTML = `<td>${r.label}</td><td style="color:#555;font-size:0.78rem">${r.sym}</td>
+          <td class="num ${valClass}">${valStr}</td>
+          <td class="num">${runStr}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    calculate();
+    document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calculate));
+  </script>
+</body>
+</html>
