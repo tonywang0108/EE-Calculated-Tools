@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board Power Estimator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--card:#fff;--border:#e2e8f0;
+  --text:#1a202c;--muted:#718096;
+  --primary:#2563eb;--primary-dk:#1d4ed8;
+  --danger:#dc2626;--success:#16a34a;--warn:#d97706;
+  --hdr:#0f172a;--hdr-txt:#f8fafc;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* ── Header ─────────────────────────────────────────────── */
+.hdr{background:var(--hdr);color:var(--hdr-txt);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.hdr-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.hdr-sub{font-size:11px;color:#94a3b8;margin-top:1px}
+.hdr-acts{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn{padding:6px 13px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s,opacity .15s;display:inline-flex;align-items:center;gap:5px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover:not(:disabled){background:var(--primary-dk)}
+.btn-ghost{background:#334155;color:#e2e8f0}.btn-ghost:hover:not(:disabled){background:#475569}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{background:var(--bg)}
+.btn-danger{background:transparent;color:#ef4444;padding:4px 8px;font-size:12px;border-radius:5px}.btn-danger:hover{background:#fef2f2}
+.btn-edit{background:transparent;color:var(--primary);padding:4px 8px;font-size:12px;border-radius:5px}.btn-edit:hover{background:#eff6ff}
+.btn-dup{background:transparent;color:#16a34a;padding:4px 8px;font-size:12px;border-radius:5px}.btn-dup:hover{background:#f0fdf4}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-icon{background:transparent;border:none;cursor:pointer;padding:4px;color:var(--muted);border-radius:4px}.btn-icon:hover{background:var(--bg);color:var(--text)}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.layout{display:grid;grid-template-columns:1fr 380px;gap:14px;padding:14px;max-width:1440px;margin:0 auto;align-items:start}
+@media(max-width:960px){.layout{grid-template-columns:1fr}}
+
+/* ── Cards ─────────────────────────────────────────────── */
+.card{background:var(--card);border-radius:10px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:12px}
+.card-hdr{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px}
+.card-body{padding:14px 15px}
+.card-body.p0{padding:0}
+
+/* ── Forms ─────────────────────────────────────────────── */
+.row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.fg{flex:1;min-width:90px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+.fg input,.fg select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff;color:var(--text);transition:border-color .15s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+input[type=color]{width:28px;height:26px;padding:2px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:none}
+
+/* ── Mode list ─────────────────────────────────────────── */
+.mode-list{display:flex;flex-direction:column;gap:5px}
+.mode-row{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg);border-radius:6px;border:1px solid var(--border)}
+.mode-row input[type=text]{flex:1;border:none;background:transparent;font-size:13px;font-weight:500}
+.mode-row input[type=text]:focus{outline:none}
+.pct-in{width:52px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:right;background:#fff}
+.pct-warn{font-size:11px;color:var(--warn);margin-top:5px}
+
+/* ── Component table ─────────────────────────────────────── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;padding:7px 8px;background:var(--bg);color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{padding:8px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:#f8fafc}
+.tbl-wrap{overflow-x:auto}
+
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.2px}
+.t-digital_ic{background:#dbeafe;color:#1e40af}
+.t-memory{background:#dcfce7;color:#14532d}
+.t-regulator{background:#fef3c7;color:#78350f}
+.t-analog_rf{background:#f3e8ff;color:#581c87}
+.t-passive{background:#f1f5f9;color:#334155}
+
+.rail-tag{display:inline-block;padding:1px 6px;background:#f1f5f9;border:1px solid var(--border);border-radius:4px;font-size:11px;font-weight:600;font-family:monospace}
+
+/* ── Results panel ───────────────────────────────────────── */
+.sticky-results{position:sticky;top:56px}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.metric{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.metric.hi{border-color:var(--primary);background:#eff6ff}
+.metric-val{font-size:19px;font-weight:700;line-height:1.2}
+.metric.hi .metric-val{color:var(--primary)}
+.metric-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+
+.rtbl{width:100%;border-collapse:collapse;font-size:12px}
+.rtbl th{text-align:right;padding:5px 8px;background:var(--bg);color:var(--muted);font-weight:600;font-size:11px}
+.rtbl th:first-child{text-align:left}
+.rtbl td{padding:6px 8px;border-bottom:1px solid #f1f5f9;text-align:right}
+.rtbl td:first-child{text-align:left}
+.rtbl tr:last-child td{border-bottom:none}
+.rtbl .tot td{font-weight:600;background:#f8fafc;border-top:2px solid var(--border)}
+
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.pbar-wrap{display:flex;height:7px;border-radius:4px;overflow:hidden;gap:1px;margin-bottom:10px}
+.pbar-seg{height:100%;transition:flex .3s}
+
+/* ── Modal ─────────────────────────────────────────────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.overlay.on{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:700px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.modal-hdr{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-weight:700;font-size:15px}
+.modal-body{padding:20px}
+.modal-footer{padding:13px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff}
+.mode-in-grid{display:flex;flex-direction:column;gap:6px}
+.mode-in-row{display:grid;gap:8px;align-items:end;padding:9px 12px;background:var(--bg);border-radius:7px}
+.mode-in-row input{padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;background:#fff;width:100%}
+.mode-in-row input:focus{outline:none;border-color:var(--primary)}
+.mode-nm{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin:14px 0 7px}
+.sec-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.hint{font-size:11px;color:#94a3b8}
+.empty{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-icon{font-size:30px;margin-bottom:7px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:monospace}
+hr.div{border:none;border-top:1px solid var(--border);margin:12px 0}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div>
+    <div class="hdr-title">⚡ Board Power Estimator</div>
+    <div class="hdr-sub">PCB-level power consumption calculator · Made by tony.wang@samsara.com</div>
+  </div>
+  <div class="hdr-acts">
+    <button class="btn btn-ghost btn-sm" onclick="loadFromFile()">📂 Load JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="saveToFile()">💾 Save JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📊 Export CSV</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🔋 System Configuration</div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="fg">
+            <label>Battery / Input Voltage (V)</label>
+            <input type="number" id="cfg-bv" value="3.7" min="0.1" step="0.1" oninput="updateConfig()">
+          </div>
+          <div class="fg">
+            <label>Battery Capacity (mAh)</label>
+            <input type="number" id="cfg-bc" value="2000" min="0" oninput="updateConfig()">
+          </div>
+          <div class="fg">
+            <label>Design Margin (%)</label>
+            <input type="number" id="cfg-margin" value="20" min="0" max="200" oninput="updateConfig()">
+          </div>
+          <div class="fg">
+            <label>Ambient Temp (°C)</label>
+            <input type="number" id="cfg-temp" value="25" oninput="updateConfig()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">⏱ Operating Modes</div>
+        <button class="btn btn-primary btn-sm" onclick="addMode()">+ Mode</button>
+      </div>
+      <div class="card-body">
+        <div class="mode-list" id="mode-list"></div>
+        <div id="pct-warn" class="pct-warn" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🔌 Components <span id="comp-count" style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px"></span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="openAdd()">+ Add Component</button>
+        </div>
+      </div>
+      <div class="card-body p0" id="comp-container"></div>
+    </div>
+  </div>
+
+  <div class="sticky-results">
+    <div id="results"></div>
+  </div>
+</div>
+
+<input type="file" id="file-in" accept=".json" style="display:none" onchange="handleLoad(event)">
+
+<div class="overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="modal-title">Add Component</div>
+      <button class="btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveComp()">Save Component</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let S = {
+  cfg: { bv: 3.7, bc: 2000, margin: 20, temp: 25 },
+  modes: [
+    { id:'m1', name:'Active',  pct:30, color:'#ef4444' },
+    { id:'m2', name:'Idle',    pct:60, color:'#f59e0b' },
+    { id:'m3', name:'Sleep',   pct:10, color:'#10b981' }
+  ],
+  comps: []
+};
+let editId = null;
+const uid = () => 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+
+function fmtP(mW) {
+  if (!isFinite(mW) || mW < 0) mW = 0;
+  if (mW >= 1000) return (mW/1000).toFixed(3)+' W';
+  if (mW >= 1)    return mW.toFixed(2)+' mW';
+  return (mW*1000).toFixed(1)+' μW';
+}
+function fmtI(mA) {
+  if (!isFinite(mA) || mA < 0) mA = 0;
+  if (mA >= 1000) return (mA/1000).toFixed(3)+' A';
+  if (mA >= 1)    return mA.toFixed(3)+' mA';
+  return (mA*1000).toFixed(1)+' μA';
+}
+function fmtT(h) {
+  if (!isFinite(h)) return '—';
+  if (h < 1)    return (h*60).toFixed(0)+' min';
+  if (h < 48)   return h.toFixed(1)+' hr';
+  if (h < 8760) return (h/24).toFixed(1)+' days';
+  return (h/8760).toFixed(1)+' yr';
+}
+function esc(s) {
+  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const TYPE_LABEL = {
+  digital_ic:'Digital IC', memory:'Memory',
+  regulator:'Regulator', analog_rf:'Analog/RF', passive:'Passive'
+};
+const TYPE_ICON = {
+  digital_ic:'🖥', memory:'💾', regulator:'⚙️', analog_rf:'📡', passive:'⬛'
+};
+
+function persist() { try { localStorage.setItem('bpe2', JSON.stringify(S)); } catch(e) {} }
+function restore() {
+  try {
+    const d = localStorage.getItem('bpe2');
+    if (d) { S = JSON.parse(d); syncCfgInputs(); }
+  } catch(e) {}
+}
+function syncCfgInputs() {
+  document.getElementById('cfg-bv').value    = S.cfg.bv;
+  document.getElementById('cfg-bc').value    = S.cfg.bc;
+  document.getElementById('cfg-margin').value = S.cfg.margin;
+  document.getElementById('cfg-temp').value  = S.cfg.temp;
+}
+
+function saveToFile() {
+  const res = calc();
+  const data = { ...S, _results: res, _ts: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  dl(blob, 'board-power-estimate.json');
+}
+function loadFromFile() { document.getElementById('file-in').click(); }
+function handleLoad(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      const {_results, _ts, ...st} = d;
+      S = st; syncCfgInputs(); renderAll(); persist();
+    } catch(_) { alert('Invalid file format'); }
+  };
+  r.readAsText(f);
+  e.target.value = '';
+}
+function exportCSV() {
+  const res = calc();
+  const lines = [];
+  lines.push('Board Power Estimator — Export');
+  lines.push(`Date,${new Date().toLocaleString()}`);
+  lines.push('');
+  lines.push('SYSTEM CONFIG');
+  lines.push(`Input Voltage (V),${S.cfg.bv}`);
+  lines.push(`Battery Capacity (mAh),${S.cfg.bc}`);
+  lines.push(`Design Margin (%),${S.cfg.margin}`);
+  lines.push(`Ambient Temp (°C),${S.cfg.temp}`);
+  lines.push('');
+  lines.push('OPERATING MODES');
+  lines.push('Name,Time (%),Power (mW),Current (mA)');
+  S.modes.forEach(m => {
+    const p = res.byMode[m.id]?.total || 0;
+    const i = S.cfg.bv > 0 ? p/S.cfg.bv : 0;
+    lines.push(`${m.name},${m.pct},${p.toFixed(3)},${i.toFixed(3)}`);
+  });
+  lines.push('');
+  lines.push('COMPONENTS');
+  const mHdr = S.modes.map(m=>`${m.name} Current (mA),${m.name} Power (mW)`).join(',');
+  lines.push(`Name,Type,Rail/Config,${mHdr}`);
+  S.comps.forEach(c => {
+    const railInfo = c.type==='regulator'
+      ? `${c.inRail||'?'} -> ${c.outRail||'?'}`
+      : `${c.rail||'?'} @ ${c.v||0}V`;
+    const mVals = S.modes.map(m => {
+      const md = c.md?.[m.id] || {};
+      if (c.type==='regulator') {
+        const pw = res.byComp?.[c.id]?.[m.id] || 0;
+        return `${(md.eff||85)}%,${pw.toFixed(3)}`;
+      }
+      const cur = parseFloat(md.cur)||0;
+      const pw = res.byComp?.[c.id]?.[m.id] || 0;
+      return `${cur.toFixed(4)},${pw.toFixed(3)}`;
+    }).join(',');
+    lines.push(`${c.name},${TYPE_LABEL[c.type]},${railInfo},${mVals}`);
+  });
+  lines.push('');
+  lines.push('SUMMARY');
+  lines.push(`Weighted Avg Power (mW),${res.wavg.toFixed(3)}`);
+  lines.push(`With Design Margin (mW),${res.wmargin.toFixed(3)}`);
+  lines.push(`Peak Power (mW),${res.peak.toFixed(3)}`);
+  lines.push(`Avg Current (mA),${(res.wavg/S.cfg.bv).toFixed(3)}`);
+  if (res.bl) {
+    lines.push(`Battery Life (hours),${res.bl.h.toFixed(2)}`);
+    lines.push(`Battery Life (days),${res.bl.d.toFixed(2)}`);
+  }
+  lines.push('');
+  lines.push('RAIL BREAKDOWN (mW per mode)');
+  const rHdr = S.modes.map(m=>m.name).join(',');
+  lines.push(`Rail,Is Source,${rHdr}`);
+  Object.entries(res.byRail).forEach(([r,rd]) => {
+    const vals = S.modes.map(m=>(rd.byMode[m.id]||0).toFixed(3)).join(',');
+    lines.push(`${r},${rd.isSource?'Yes':'No'},${vals}`);
+  });
+
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  dl(blob, 'board-power-estimate.csv');
+}
+function dl(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function updateConfig() {
+  S.cfg.bv     = parseFloat(document.getElementById('cfg-bv').value)||3.7;
+  S.cfg.bc     = parseFloat(document.getElementById('cfg-bc').value)||0;
+  S.cfg.margin = parseFloat(document.getElementById('cfg-margin').value)||0;
+  S.cfg.temp   = parseFloat(document.getElementById('cfg-temp').value)||25;
+  persist(); renderResults();
+}
+
+function addMode() {
+  const palette=['#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#06b6d4'];
+  const used = new Set(S.modes.map(m=>m.color));
+  const color = palette.find(c=>!used.has(c)) || '#'+Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,'0');
+  const id = uid();
+  S.modes.push({id, name:`Mode ${S.modes.length+1}`, pct:0, color});
+  S.comps.forEach(c => {
+    if (!c.md) c.md={};
+    c.md[id] = c.type==='regulator' ? {eff:85} : {cur:0};
+  });
+  persist(); renderAll();
+}
+function upMode(id, field, val) {
+  const m = S.modes.find(x=>x.id===id); if (!m) return;
+  if (field==='pct') m.pct = parseFloat(val)||0;
+  else m[field] = val;
+  persist(); checkPct(); renderResults();
+}
+function delMode(id) {
+  if (S.modes.length<=1){alert('Need at least one mode.');return;}
+  if (!confirm('Delete this mode?')) return;
+  S.modes = S.modes.filter(m=>m.id!==id);
+  S.comps.forEach(c=>{ if(c.md) delete c.md[id]; });
+  persist(); renderAll();
+}
+function checkPct() {
+  const total = S.modes.reduce((s,m)=>s+m.pct, 0);
+  const w = document.getElementById('pct-warn');
+  if (Math.abs(total-100)>0.05) {
+    w.style.display='block';
+    w.textContent=`⚠ Percentages sum to ${total.toFixed(1)}% (should be 100%)`;
+  } else { w.style.display='none'; }
+}
+function renderModes() {
+  document.getElementById('mode-list').innerHTML = S.modes.map(m=>`
+    <div class="mode-row">
+      <input type="color" value="${m.color}" onchange="upMode('${m.id}','color',this.value)" style="width:26px;height:26px">
+      <input type="text" value="${esc(m.name)}" oninput="upMode('${m.id}','name',this.value)" placeholder="Mode name">
+      <input type="number" class="pct-in" value="${m.pct}" min="0" max="100" step="0.1" oninput="upMode('${m.id}','pct',this.value)">
+      <span style="font-size:11px;color:var(--muted)">%</span>
+      <button class="btn-icon" onclick="delMode('${m.id}')" title="Delete mode" style="color:#ef4444;font-size:13px">✕</button>
+    </div>`).join('');
+  checkPct();
+}
+
+function calc() {
+  const modes = S.modes, comps = S.comps, cfg = S.cfg;
+  const regs  = comps.filter(c=>c.type==='regulator');
+  const loads = comps.filter(c=>c.type!=='regulator');
+  const outRails = new Set(regs.map(r=>r.outRail).filter(Boolean));
+  const res = { byMode:{}, byComp:{}, byRail:{}, wavg:0, wmargin:0, peak:0, bl:null };
+  comps.forEach(c=>{ res.byComp[c.id]={}; });
+
+  modes.forEach(mode => {
+    const mid = mode.id;
+    const rl = {};
+
+    loads.forEach(c => {
+      const md = c.md?.[mid] || {};
+      const cur = parseFloat(md.cur)||0;
+      const v   = parseFloat(c.v)||0;
+      const pw  = v*cur;
+      rl[c.rail] = (rl[c.rail]||0)+pw;
+      res.byComp[c.id][mid] = pw;
+    });
+
+    const done = new Set();
+    for (let pass=0; pass<regs.length+1; pass++) {
+      regs.forEach(reg => {
+        if (done.has(reg.id)) return;
+        const blocker = regs.find(r=>r.outRail===reg.inRail && !done.has(r.id));
+        if (blocker) return;
+        const md = reg.md?.[mid] || {};
+        const eff  = Math.max(0.01, Math.min(1,(parseFloat(md.eff)||85)/100));
+        const vin  = parseFloat(reg.inV)||5;
+        const iq   = parseFloat(reg.iq)||0;
+        const pout = rl[reg.outRail]||0;
+        const pin  = pout/eff + vin*iq;
+        rl[reg.inRail] = (rl[reg.inRail]||0)+pin;
+        res.byComp[reg.id][mid] = pin;
+        done.add(reg.id);
+      });
+    }
+    regs.filter(r=>!done.has(r.id)).forEach(reg => {
+      const md = reg.md?.[mid] || {};
+      const eff = Math.max(0.01, Math.min(1,(parseFloat(md.eff)||85)/100));
+      const vin  = parseFloat(reg.inV)||5;
+      const iq   = parseFloat(reg.iq)||0;
+      const pout = rl[reg.outRail]||0;
+      const pin  = pout/eff + vin*iq;
+      rl[reg.inRail] = (rl[reg.inRail]||0)+pin;
+      res.byComp[reg.id][mid] = pin;
+    });
+
+    let total = 0;
+    Object.entries(rl).forEach(([r,p])=>{ if (!outRails.has(r)) total+=p; });
+    res.byMode[mid] = { total, rl };
+    if (total>res.peak) res.peak=total;
+  });
+
+  const allRails = new Set();
+  Object.values(res.byMode).forEach(m=>Object.keys(m.rl).forEach(r=>allRails.add(r)));
+  allRails.forEach(rail=>{
+    res.byRail[rail]={isSource:!outRails.has(rail), byMode:{}};
+    modes.forEach(m=>{ res.byRail[rail].byMode[m.id]=res.byMode[m.id]?.rl[rail]||0; });
+  });
+
+  const sumPct = modes.reduce((s,m)=>s+m.pct,0)||100;
+  res.wavg = modes.reduce((s,m)=>s+(res.byMode[m.id]?.total||0)*m.pct/sumPct, 0);
+  res.wmargin = res.wavg*(1+cfg.margin/100);
+  if (cfg.bc>0 && cfg.bv>0 && res.wmargin>0) {
+    const imA = res.wmargin/cfg.bv;
+    res.bl = { h: cfg.bc/imA, d: cfg.bc/imA/24 };
+  }
+  modes.forEach(mode=>{
+    const mid=mode.id;
+    let regLoss=0;
+    regs.forEach(reg=>{
+      const md=reg.md?.[mid]||{};
+      const eff=Math.max(0.01,Math.min(1,(parseFloat(md.eff)||85)/100));
+      const vin=parseFloat(reg.inV)||5;
+      const iq=parseFloat(reg.iq)||0;
+      const pout=res.byMode[mid]?.rl[reg.outRail]||0;
+      regLoss += pout*(1/eff-1) + vin*iq;
+    });
+    res.byMode[mid].regLoss = regLoss;
+  });
+
+  return res;
+}
+
+function renderComps() {
+  const ct = document.getElementById('comp-container');
+  const cnt = document.getElementById('comp-count');
+  const n = S.comps.length;
+  cnt.textContent = n ? `(${n})` : '';
+
+  if (!n) {
+    ct.innerHTML=`<div class="empty"><div class="empty-icon">🔌</div>
+      <div>No components yet</div>
+      <div style="font-size:12px;margin-top:4px;color:#94a3b8">Click "+ Add Component" to begin</div></div>`;
+    return;
+  }
+
+  const res = calc();
+  let html = '<div class="tbl-wrap"><table class="tbl"><thead><tr>';
+  html += '<th>Name</th><th>Type</th><th>Config</th>';
+  S.modes.forEach(m=>{html+=`<th style="color:${m.color}">${esc(m.name)}</th>`;});
+  html += '<th></th></tr></thead><tbody>';
+
+  S.comps.forEach(c=>{
+    const mCells = S.modes.map(m=>{
+      const md = c.md?.[m.id]||{};
+      const pw = res.byComp[c.id]?.[m.id]||0;
+      if (c.type==='regulator') {
+        const eff = parseFloat(md.eff)||85;
+        return `<td class="num">${eff}%<br><span style="color:#94a3b8;font-size:10px">${fmtP(pw)}</span></td>`;
+      }
+      const cur = parseFloat(md.cur)||0;
+      return `<td class="num">${fmtI(cur)}<br><span style="color:#94a3b8;font-size:10px">${fmtP(pw)}</span></td>`;
+    }).join('');
+
+    let cfg;
+    if (c.type==='regulator')
+      cfg=`<span class="rail-tag">${esc(c.inRail||'?')}</span> → <span class="rail-tag">${esc(c.outRail||'?')}</span>`;
+    else
+      cfg=`<span class="rail-tag">${esc(c.rail||'?')}</span> @ ${c.v||0}V`;
+
+    html+=`<tr>
+      <td><strong>${esc(c.name)}</strong>${c.notes?`<br><span style="font-size:10px;color:var(--muted)">${esc(c.notes)}</span>`:''}</td>
+      <td><span class="badge t-${c.type}">${TYPE_LABEL[c.type]}</span></td>
+      <td>${cfg}</td>
+      ${mCells}
+      <td style="white-space:nowrap">
+        <button class="btn-edit" onclick="openEdit('${c.id}')" title="Edit">✏️</button>
+        <button class="btn-dup"  onclick="dupComp('${c.id}')" title="Duplicate">⧉</button>
+        <button class="btn-danger" onclick="delComp('${c.id}')" title="Delete">🗑</button>
+      </td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  ct.innerHTML=html;
+}
+
+function renderResults() {
+  const cont = document.getElementById('results');
+  const res  = calc();
+  const {modes, cfg} = S;
+  const sumPct = modes.reduce((s,m)=>s+m.pct,0)||100;
+
+  const pbar = modes.map(m=>{
+    const flex = m.pct/sumPct*100;
+    return `<div class="pbar-seg" style="flex:${Math.max(flex,0.5)};background:${m.color}" title="${m.name}: ${m.pct}%"></div>`;
+  }).join('');
+
+  const avgI = cfg.bv>0 ? res.wavg/cfg.bv : 0;
+  const blStr = res.bl ? fmtT(res.bl.h) : '—';
+  const blDetail = res.bl ? (res.bl.d>1?`(${res.bl.d.toFixed(1)} days)`:'') : '';
+
+  let html = `
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">📊 Power Summary</div></div>
+    <div class="card-body">
+      <div class="pbar-wrap">${pbar}</div>
+      <div class="metric-grid">
+        <div class="metric hi">
+          <div class="metric-val">${fmtP(res.wmargin)}</div>
+          <div class="metric-lbl">Avg Power (+${cfg.margin}% margin)</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">${blStr}</div>
+          <div class="metric-lbl">Battery Life ${blDetail}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">${fmtP(res.peak)}</div>
+          <div class="metric-lbl">Peak Power</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val">${fmtI(avgI)}</div>
+          <div class="metric-lbl">Avg Current</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  html+=`
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">⏱ Mode Breakdown</div></div>
+    <div class="card-body p0">
+      <table class="rtbl">
+        <thead><tr><th>Mode</th><th>Time</th><th>Power</th><th>Current</th><th>Reg Loss</th></tr></thead>
+        <tbody>`;
+  modes.forEach(m=>{
+    const p = res.byMode[m.id]?.total||0;
+    const i = cfg.bv>0 ? p/cfg.bv : 0;
+    const rl= res.byMode[m.id]?.regLoss||0;
+    html+=`<tr>
+      <td><span class="dot" style="background:${m.color};margin-right:5px"></span>${esc(m.name)}</td>
+      <td>${m.pct}%</td>
+      <td class="num">${fmtP(p)}</td>
+      <td class="num">${fmtI(i)}</td>
+      <td class="num">${fmtP(rl)}</td>
+    </tr>`;
+  });
+  html+=`<tr class="tot">
+    <td>Weighted Avg</td><td>—</td>
+    <td class="num">${fmtP(res.wavg)}</td>
+    <td class="num">${fmtI(avgI)}</td><td>—</td>
+  </tr>`;
+  html+='</tbody></table></div></div>';
+
+  const railKeys = Object.keys(res.byRail);
+  if (railKeys.length) {
+    html+=`
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">🔋 Rail Breakdown</div></div>
+      <div class="card-body p0">
+        <table class="rtbl"><thead><tr><th>Rail</th>`;
+    modes.forEach(m=>{html+=`<th style="color:${m.color}">${esc(m.name)}</th>`;});
+    html+='</tr></thead><tbody>';
+    railKeys.forEach(rail=>{
+      const rd=res.byRail[rail];
+      html+=`<tr>
+        <td><span class="rail-tag">${esc(rail)}</span>
+          ${rd.isSource?'<span style="font-size:10px;color:#16a34a;margin-left:4px">SOURCE</span>':''}
+        </td>`;
+      modes.forEach(m=>{html+=`<td class="num">${fmtP(rd.byMode[m.id]||0)}</td>`;});
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  }
+
+  if (S.comps.length) {
+    html+=`
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">🔌 Component Power</div></div>
+      <div class="card-body p0">
+        <table class="rtbl"><thead><tr><th>Component</th>`;
+    modes.forEach(m=>{html+=`<th style="color:${m.color}">${esc(m.name)}</th>`;});
+    html+='</tr></thead><tbody>';
+    const totals={}; modes.forEach(m=>{totals[m.id]=0;});
+    S.comps.forEach(c=>{
+      html+=`<tr><td><strong>${esc(c.name)}</strong><br>
+        <span style="font-size:10px;color:var(--muted)">${TYPE_ICON[c.type]} ${TYPE_LABEL[c.type]}</span></td>`;
+      modes.forEach(m=>{
+        const pw=res.byComp[c.id]?.[m.id]||0;
+        totals[m.id]+=pw;
+        html+=`<td class="num">${fmtP(pw)}</td>`;
+      });
+      html+='</tr>';
+    });
+    html+='<tr class="tot"><td>Total</td>';
+    modes.forEach(m=>{html+=`<td class="num">${fmtP(totals[m.id])}</td>`;});
+    html+='</tr></tbody></table></div></div>';
+  }
+
+  html+=`
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">🌡 Thermal Estimate</div></div>
+    <div class="card-body p0">
+      <table class="rtbl">
+        <thead><tr><th>Mode</th><th>Board Power</th><th>Reg Losses</th><th>IC Heat</th></tr></thead>
+        <tbody>`;
+  modes.forEach(m=>{
+    const total=res.byMode[m.id]?.total||0;
+    const regL =res.byMode[m.id]?.regLoss||0;
+    const icH  =total-regL;
+    html+=`<tr>
+      <td><span class="dot" style="background:${m.color};margin-right:5px"></span>${esc(m.name)}</td>
+      <td class="num">${fmtP(total)}</td>
+      <td class="num">${fmtP(regL)}</td>
+      <td class="num">${fmtP(icH)}</td>
+    </tr>`;
+  });
+  html+=`</tbody></table>
+    <div style="padding:10px 12px;font-size:11px;color:var(--muted)">
+      All input power is eventually dissipated as heat. Peak board power for thermal design: <strong>${fmtP(res.peak)}</strong>
+      ${cfg.temp?`— Ambient: ${cfg.temp}°C`:''}
+    </div>
+  </div></div>`;
+
+  cont.innerHTML=html;
+}
+
+function openAdd() {
+  editId=null;
+  document.getElementById('modal-title').textContent='Add Component';
+  renderModal(null);
+  document.getElementById('modal').classList.add('on');
+}
+function openEdit(id) {
+  editId=id;
+  document.getElementById('modal-title').textContent='Edit Component';
+  renderModal(S.comps.find(c=>c.id===id)||null);
+  document.getElementById('modal').classList.add('on');
+}
+function closeModal() { document.getElementById('modal').classList.remove('on'); editId=null; }
+
+function renderModal(c) {
+  const t = c?.type||'digital_ic';
+  const typeOpts = Object.entries(TYPE_LABEL).map(([v,l])=>
+    `<option value="${v}" ${t===v?'selected':''}>${TYPE_ICON[v]} ${l}</option>`).join('');
+
+  let specific='';
+  if (t==='regulator') {
+    specific=`
+    <div class="row">
+      <div class="fg"><label>Input Rail Name</label><input type="text" id="m-inrail" value="${esc(c?.inRail||'5V')}" placeholder="e.g. 5V"></div>
+      <div class="fg"><label>Input Voltage (V)</label><input type="number" id="m-inv" value="${c?.inV||5}" step="0.1" min="0"></div>
+    </div>
+    <div class="row">
+      <div class="fg"><label>Output Rail Name</label><input type="text" id="m-outrail" value="${esc(c?.outRail||'3.3V')}" placeholder="e.g. 3.3V"></div>
+      <div class="fg"><label>Output Voltage (V)</label><input type="number" id="m-outv" value="${c?.outV||3.3}" step="0.1" min="0"></div>
+      <div class="fg"><label>Quiescent Iq (mA)</label><input type="number" id="m-iq" value="${c?.iq||0}" step="0.01" min="0"></div>
+    </div>
+    <div class="sec-hdr"><span class="sec-lbl">Efficiency per Mode (%)</span></div>
+    <div class="mode-in-grid">
+    ${S.modes.map(m=>{
+      const eff=(c?.md?.[m.id]?.eff??85);
+      return `<div class="mode-in-row" style="grid-template-columns:auto 1fr 1fr;">
+        <div class="mode-nm"><span class="dot" style="background:${m.color}"></span>${esc(m.name)}</div>
+        <div><label style="font-size:10px;color:var(--muted)">Efficiency (%)</label>
+          <input type="number" id="m-eff-${m.id}" value="${eff}" min="1" max="100" step="1"></div>
+      </div>`;
+    }).join('')}
+    </div>`;
+  } else {
+    specific=`
+    <div class="row">
+      <div class="fg"><label>Supply Rail Name</label><input type="text" id="m-rail" value="${esc(c?.rail||'3.3V')}" placeholder="e.g. 3.3V"></div>
+      <div class="fg"><label>Supply Voltage (V)</label><input type="number" id="m-v" value="${c?.v||3.3}" step="0.01" min="0"></div>
+    </div>
+    <div class="sec-hdr">
+      <span class="sec-lbl">Current per Mode</span>
+      <span class="hint">Enter 0 if off in that mode</span>
+    </div>
+    <div class="mode-in-grid">
+    ${S.modes.map(m=>{
+      const cur=(c?.md?.[m.id]?.cur??0);
+      const pw = (parseFloat(c?.v)||3.3)*parseFloat(cur);
+      return `<div class="mode-in-row" style="grid-template-columns:auto 1fr 1fr;">
+        <div class="mode-nm"><span class="dot" style="background:${m.color}"></span>${esc(m.name)}</div>
+        <div><label style="font-size:10px;color:var(--muted)">Current (mA)</label>
+          <input type="number" id="m-cur-${m.id}" value="${cur}" min="0" step="0.001"
+            oninput="updateModalPower('${m.id}')"></div>
+        <div><label style="font-size:10px;color:var(--muted)">Power (mW)</label>
+          <input type="number" id="m-pw-${m.id}" value="${pw.toFixed(3)}" min="0" step="0.001" readonly
+            style="background:#f8fafc;color:var(--muted)"></div>
+      </div>`;
+    }).join('')}
+    </div>`;
+  }
+
+  document.getElementById('modal-body').innerHTML=`
+    <div class="row">
+      <div class="fg" style="flex:2"><label>Component Name</label>
+        <input type="text" id="m-name" value="${esc(c?.name||'')}" placeholder="e.g. STM32H7, 16MB Flash..."></div>
+      <div class="fg"><label>Type</label>
+        <select id="m-type" onchange="onTypeChange()">${typeOpts}</select></div>
+    </div>
+    <div id="m-specific">${specific}</div>
+    <hr class="div">
+    <div class="fg"><label>Notes (optional)</label>
+      <input type="text" id="m-notes" value="${esc(c?.notes||'')}" placeholder="Part number, datasheet ref, assumptions..."></div>
+  `;
+}
+
+function updateModalPower(mid) {
+  const v   = parseFloat(document.getElementById('m-v')?.value)||0;
+  const cur = parseFloat(document.getElementById(`m-cur-${mid}`)?.value)||0;
+  const pwEl = document.getElementById(`m-pw-${mid}`);
+  if (pwEl) pwEl.value = (v*cur).toFixed(3);
+}
+
+function onTypeChange() {
+  const name  = document.getElementById('m-name')?.value||'';
+  const type  = document.getElementById('m-type')?.value||'digital_ic';
+  const notes = document.getElementById('m-notes')?.value||'';
+  const pseudo = { type, name, notes };
+  if (type!=='regulator') {
+    pseudo.rail  = document.getElementById('m-rail')?.value || '3.3V';
+    pseudo.v     = document.getElementById('m-v')?.value    || 3.3;
+    pseudo.md    = Object.fromEntries(S.modes.map(m=>[m.id,{cur: document.getElementById(`m-cur-${m.id}`)?.value||0}]));
+  } else {
+    pseudo.md = Object.fromEntries(S.modes.map(m=>[m.id,{eff:85}]));
+  }
+  renderModal(pseudo);
+  document.getElementById('m-name').value  = name;
+  document.getElementById('m-type').value  = type;
+  document.getElementById('m-notes').value = notes;
+}
+
+function saveComp() {
+  const name = document.getElementById('m-name')?.value?.trim();
+  if (!name) { alert('Please enter a component name.'); return; }
+  const type  = document.getElementById('m-type')?.value||'digital_ic';
+  const notes = document.getElementById('m-notes')?.value?.trim()||'';
+  const comp = { id: editId||uid(), name, type, notes, md:{} };
+
+  if (type==='regulator') {
+    comp.inRail = document.getElementById('m-inrail')?.value?.trim()||'5V';
+    comp.inV    = parseFloat(document.getElementById('m-inv')?.value)||5;
+    comp.outRail= document.getElementById('m-outrail')?.value?.trim()||'3.3V';
+    comp.outV   = parseFloat(document.getElementById('m-outv')?.value)||3.3;
+    comp.iq     = parseFloat(document.getElementById('m-iq')?.value)||0;
+    S.modes.forEach(m=>{ comp.md[m.id]={eff:parseFloat(document.getElementById(`m-eff-${m.id}`)?.value)||85}; });
+  } else {
+    comp.rail = document.getElementById('m-rail')?.value?.trim()||'3.3V';
+    comp.v    = parseFloat(document.getElementById('m-v')?.value)||0;
+    S.modes.forEach(m=>{ comp.md[m.id]={cur:parseFloat(document.getElementById(`m-cur-${m.id}`)?.value)||0}; });
+  }
+
+  if (editId) {
+    const idx = S.comps.findIndex(c=>c.id===editId);
+    if (idx>=0) S.comps[idx]=comp; else S.comps.push(comp);
+  } else {
+    S.comps.push(comp);
+  }
+  closeModal(); persist(); renderAll();
+}
+
+function delComp(id) {
+  if (!confirm('Delete this component?')) return;
+  S.comps = S.comps.filter(c=>c.id!==id);
+  persist(); renderAll();
+}
+
+function dupComp(id) {
+  const orig = S.comps.find(c=>c.id===id); if (!orig) return;
+  const copy = JSON.parse(JSON.stringify(orig));
+  copy.id   = uid();
+  copy.name = orig.name+' (copy)';
+  const idx = S.comps.findIndex(c=>c.id===id);
+  S.comps.splice(idx+1,0,copy);
+  persist(); renderAll();
+}
+
+function renderAll() { renderModes(); renderComps(); renderResults(); }
+document.addEventListener('DOMContentLoaded', ()=>{ restore(); renderAll(); });
+</script>
+</body>
+</html>

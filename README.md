@@ -20,5 +20,6 @@
 - **LC 截止／諧振**：f₀ = 1/(2π√(LC))、√(LC) 與週期 T
 - **RC 延遲與截止**：τ = RC、一階低通 −3 dB 截止 f_c = 1/(2πRC)
 - **Antenna Gain Budget**：RF link budget（Friis），含 FSPL、EIRP、Noise floor、Sensitivity 與 Link margin（另開新分頁）
+- **Board Power Estimator**：PCB 功耗估算（多 operating modes + 元件電流/效率 + Rail breakdown + 匯出 JSON/CSV；另開新分頁）
 
 版面為一排 3 個計算器（響應式），標示為中英雙語。
